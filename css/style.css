@@ -2,8 +2,9 @@
   --paper: #ffffff;
   --ink: #1f120b;
   --muted: #6b5a4e;
-  --ember: #b8460f;       /* accent: text and small details */
-  --glow: #d4581a;        /* accent: buttons */
+  --ember: #fb233b;       /* accent: text and small details (Apple Music red) */
+  --glow: #fb233b;        /* accent: buttons */
+  --glow-dark: #d91c33;   /* accent: button hover */
   --line: rgba(31, 18, 11, 0.14);
   --serif: "Cormorant Garamond", Georgia, serif;
   --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -70,10 +71,10 @@ h1 em, h2 em { font-style: italic; color: var(--ember); }
   display: inline-block; padding: 16px 34px; border-radius: 999px; text-decoration: none;
   background: var(--glow); color: #fff; font-weight: 500; font-size: 0.82rem;
   letter-spacing: 0.16em; text-transform: uppercase;
-  box-shadow: 0 10px 30px rgba(212, 88, 26, 0.3);
+  box-shadow: 0 10px 30px rgba(251, 35, 59, 0.3);
   transition: transform 0.2s, background 0.2s;
 }
-.btn:hover { transform: translateY(-2px); background: var(--ember); }
+.btn:hover { transform: translateY(-2px); background: var(--glow-dark); }
 .link { display: inline-block; margin-left: 22px; font-size: 0.85rem; color: var(--muted); text-decoration: none; }
 
 /* phones: text sits in a white sheet at the bottom, under the dress */
