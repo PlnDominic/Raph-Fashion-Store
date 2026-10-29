@@ -1,4 +1,4 @@
-# Raff Fashion Store
+# Raph Fashion Store
 
 Made-to-measure gowns, sewn to order. A single scrolling storefront where customers pick a design, send their measurements, and pay online (Ghana: mobile money / card, GHS).
 
