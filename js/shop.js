@@ -45,9 +45,11 @@
           </div>
           <div class="card__body">
             <h3>${p.name}</h3>
-            <p>${p.blurb}</p>
             <p class="card__meta"><strong>${price}</strong>${lead}</p>
-            <button class="btn" type="button" data-order="${p.id}">Order this dress</button>
+            <div class="card__actions">
+              ${p.readyMade ? `<button class="btn" type="button" data-add="${p.id}">Order</button>` : ''}
+              <button class="btn ${p.readyMade ? 'btn--ghost' : ''}" type="button" data-order="${p.id}">Make this for me</button>
+            </div>
           </div>
         </article>`;
     }).join('');
@@ -274,26 +276,31 @@
         <p>${o.notes ? esc(o.notes) + '<br>' : ''}${o.photos} photo${o.photos === 1 ? '' : 's'}</p></div>`;
   }
 
+  // Sends a finished order. Throws if the endpoint rejects it. Without an endpoint the order
+  // is kept in this browser only.
+  async function send(order, files) {
+    if (config.orderEndpoint) {
+      const fd = new FormData();
+      fd.append('order', JSON.stringify(order));
+      (files || []).forEach((f) => fd.append('photos', f.blob, f.name));
+      const res = await fetch(config.orderEndpoint, { method: 'POST', body: fd });
+      if (!res.ok) throw new Error('bad status ' + res.status);
+    } else {
+      try {
+        const all = JSON.parse(localStorage.getItem('raph_orders') || '[]');
+        all.push(order);
+        localStorage.setItem('raph_orders', JSON.stringify(all));
+      } catch (e) { /* storage unavailable */ }
+    }
+  }
+
   const ref = () => 'RPH-' + Date.now().toString(36).slice(-5).toUpperCase() + Math.random().toString(36).slice(2, 4).toUpperCase();
 
   async function submit() {
     const order = Object.assign({ reference: ref(), placedAt: new Date().toISOString() }, collect());
     nextBtn.disabled = true; nextBtn.textContent = 'Sending…';
     try {
-      if (config.orderEndpoint) {
-        const fd = new FormData();
-        fd.append('order', JSON.stringify(order));
-        state.files.forEach((f) => fd.append('photos', f.blob, f.name));
-        const res = await fetch(config.orderEndpoint, { method: 'POST', body: fd });
-        if (!res.ok) throw new Error('bad status ' + res.status);
-      } else {
-        // no backend connected yet: keep the order in this browser only
-        try {
-          const all = JSON.parse(localStorage.getItem('raph_orders') || '[]');
-          all.push(order);
-          localStorage.setItem('raph_orders', JSON.stringify(all));
-        } catch (e) { /* storage unavailable */ }
-      }
+      await send(order, state.files);
     } catch (e) {
       nextBtn.disabled = false; nextBtn.textContent = 'Place order';
       return fail('Could not send. Check your connection and try again.');
@@ -327,6 +334,8 @@
     } catch (e) { /* ignore */ }
   }
   function clearDraft() { try { localStorage.removeItem(DRAFT); } catch (e) { /* ignore */ } }
+
+  window.Raph = { money, ref, send, config, esc };
 
   // ---------- wiring ----------
   buildMeasureFields();

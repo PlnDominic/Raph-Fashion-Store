@@ -2,7 +2,7 @@
 //
 //   id        short, unique, lowercase with dashes
 //   name      shown on the card and in the order
-//   blurb     one or two lines under the name
+//   readyMade true if a finished dress can be bought straight away (adds an "Order" / add-to-cart button)
 //   price     number in GHS, or null to show "Price on request"
 //   leadTime  e.g. "3 to 4 weeks", or null to hide it
 //   frames    which hero frames (1-128) to use as the card photos; scroll/drag over the card to turn the dress
@@ -12,7 +12,7 @@ window.PRODUCTS = [
   {
     id: 'sunset-kente-mermaid',
     name: 'The Sunset Kente Mermaid',
-    blurb: 'Hand-beaded corset bodice, sculpted shoulder and a kente-print train, finished with a matching beaded fan.',
+    readyMade: true,
     price: null,
     leadTime: null,
     frames: [1, 17, 33, 49, 65, 81, 97, 113],
@@ -21,6 +21,8 @@ window.PRODUCTS = [
 
 window.RAPH_CONFIG = {
   currency: 'GHS',
+  // sizes offered when buying a ready-made dress
+  sizes: ['UK 8', 'UK 10', 'UK 12', 'UK 14', 'UK 16', 'UK 18'],
   // Where finished orders are sent (POST, multipart form). While this is null, orders are only
   // saved in the browser they were made in, and the confirmation screen says so.
   orderEndpoint: null,

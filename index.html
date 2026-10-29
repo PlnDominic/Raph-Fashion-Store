@@ -26,7 +26,13 @@
 
   <header class="topbar">
     <a class="brand" href="#top">Raph <span>Fashion Store</span></a>
-    <a class="topbar__cta" href="#shop">Shop</a>
+    <div class="topbar__actions">
+      <a class="topbar__cta" href="#shop">Shop</a>
+      <button class="topbar__cart" id="cartBtn" type="button" aria-label="Open cart">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1.2 11.2a1.5 1.5 0 0 1-1.5 1.3H7.7a1.5 1.5 0 0 1-1.5-1.3L5 8z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>
+        <span class="topbar__count" id="cartCount" hidden>0</span>
+      </button>
+    </div>
   </header>
 
   <main id="top">
@@ -38,7 +44,7 @@
         <noscript><img class="hero__still" src="assets/hero-frames/0001.webp" alt="A model in an orange beaded mermaid gown with a kente-print train"></noscript>
 
         <div class="beat beat--intro" data-from="0" data-to="0.28">
-          <p class="eyebrow">Made to measure &middot; Ghana</p>
+          <p class="eyebrow">Made to measure &middot; Accra</p>
           <h1>Sewn for<br><em>your</em> body.</h1>
           <p class="lede">Pick a design, send your measurements, and our team stitches it to fit.</p>
         </div>
@@ -73,7 +79,8 @@
   </main>
 
   <footer class="footer">
-    <p><strong>Raph Fashion Store</strong> &middot; Made to measure, Ghana</p>
+    <p><strong>Raph Fashion Store</strong> &middot; Made to measure, Accra</p>
+    <p class="footer__credit">Developed by <a href="https://www.ecstasytechnologies.com" target="_blank" rel="noopener">Ecstasy Technologies</a></p>
   </footer>
 
   <dialog class="order" id="orderDialog" aria-labelledby="orderTitle">
@@ -157,8 +164,18 @@
     </form>
   </dialog>
 
+  <dialog class="cart" id="cartDialog" aria-labelledby="cartTitle">
+    <header class="cart__top">
+      <h3 id="cartTitle">Cart</h3>
+      <button type="button" class="order__close" id="cartClose" aria-label="Close">&times;</button>
+    </header>
+    <div class="cart__body" id="cartBody"></div>
+    <footer class="cart__foot" id="cartFoot"></footer>
+  </dialog>
+
   <script src="js/products.js"></script>
   <script src="js/hero.js"></script>
   <script src="js/shop.js"></script>
+  <script src="js/cart.js"></script>
 </body>
 </html>

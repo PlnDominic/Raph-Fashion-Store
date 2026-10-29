@@ -31,6 +31,7 @@ a { color: inherit; }
 .topbar > * { pointer-events: auto; }
 .brand { font-family: var(--serif); font-weight: 600; font-size: 1.35rem; letter-spacing: 0.02em; text-decoration: none; }
 .brand span { font-weight: 400; font-style: italic; color: var(--ember); }
+.topbar__actions { display: flex; align-items: center; gap: 10px; }
 .topbar__cta {
   font-size: 0.72rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; text-decoration: none;
   padding: 9px 18px; border: 1px solid var(--ink); border-radius: 999px;
@@ -73,7 +74,7 @@ h1 em, h2 em { font-style: italic; color: var(--ember); }
   transition: transform 0.2s, background 0.2s;
 }
 .btn:hover { transform: translateY(-2px); background: var(--ember); }
-.link { display: inline-block; margin-left: 22px; font-size: 0.85rem; color: var(--muted); }
+.link { display: inline-block; margin-left: 22px; font-size: 0.85rem; color: var(--muted); text-decoration: none; }
 
 /* phones: text sits in a white sheet at the bottom, under the dress */
 .beat--intro, .beat--specs, .beat--cta {
