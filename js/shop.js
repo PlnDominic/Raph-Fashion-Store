@@ -97,9 +97,8 @@
     restoreDraft();
     renderThumbs();
     $('#orderTitle').textContent = isCustom ? 'Your own design' : state.product.name;
-    $('#orderEyebrow').textContent = isCustom ? 'Custom order' : 'Your order';
     $('#styleOpt').hidden = isCustom;
-    $('#refLabel').textContent = isCustom ? 'Photos of the style you want (required)' : 'Style reference photos (optional)';
+    $('#refLabel').textContent = isCustom ? 'Photos of the style you want' : 'Photos (optional)';
     showStep(0);
     if (!dialog.open) dialog.showModal();
   }
@@ -128,9 +127,8 @@
   // ---------- measurements ----------
   function buildMeasureFields() {
     $('#measureFields').innerHTML = MEASUREMENTS.map((m) => `
-      <label class="field">${m.label}
+      <label class="field" title="${m.hint}">${m.label}
         <span class="unitwrap"><input name="m_${m.key}" type="number" inputmode="decimal" step="0.1" min="0" data-key="${m.key}" required><i class="unit">cm</i></span>
-        <small>${m.hint}</small>
       </label>`).join('');
   }
 
@@ -182,24 +180,24 @@
     errEl.textContent = '';
     if (step === 0) {
       const name = form.elements.name, phone = form.elements.phone, address = form.elements.address;
-      if (!name.value.trim()) return fail('Please enter your name.', name);
-      if (form.elements.phone.value.replace(/\D/g, '').length < 9) return fail('Please enter a phone number we can reach you on.', phone);
-      if (!address.value.trim()) return fail('Please tell us where to deliver.', address);
+      if (!name.value.trim()) return fail('Enter your name.', name);
+      if (form.elements.phone.value.replace(/\D/g, '').length < 9) return fail('Enter a valid phone number.', phone);
+      if (!address.value.trim()) return fail('Enter your delivery address.', address);
     }
     if (step === 1) {
       const m = readMeasurements();
       for (const f of MEASUREMENTS) {
         const inp = $(`[data-key="${f.key}"]`);
-        if (m[f.key] == null) return fail(`Please enter your ${f.label.toLowerCase()}.`, inp);
+        if (m[f.key] == null) return fail(`Enter your ${f.label.toLowerCase()}.`, inp);
         if (m[f.key] < f.min || m[f.key] > f.max) {
           const lo = state.unit === 'in' ? round1(f.min / 2.54) : f.min;
           const hi = state.unit === 'in' ? round1(f.max / 2.54) : f.max;
-          return fail(`${f.label} should be between ${lo} and ${hi} ${state.unit}. Please check it.`, inp);
+          return fail(`Check your ${f.label.toLowerCase()} (${lo}–${hi} ${state.unit}).`, inp);
         }
       }
     }
     if (step === 2 && state.custom && state.files.length === 0) {
-      return fail('Please add at least one photo of the style you want.', $('#refInput'));
+      return fail('Add at least one photo.', $('#refInput'));
     }
     return true;
   }
@@ -207,9 +205,9 @@
   function softWarnings() {
     const m = readMeasurements();
     const w = [];
-    if (m.waist && m.hips && m.waist > m.hips) w.push('Your waist is larger than your hips. Please double-check both.');
-    if (m.underbust && m.bust && m.underbust > m.bust) w.push('Your underbust is larger than your bust. Please double-check both.');
-    if (m.shoulderWaist && m.dressLength && m.shoulderWaist > m.dressLength) w.push('Shoulder-to-waist is longer than the dress length.');
+    if (m.waist && m.hips && m.waist > m.hips) w.push('Waist is larger than hips. Please check.');
+    if (m.underbust && m.bust && m.underbust > m.bust) w.push('Underbust is larger than bust. Please check.');
+    if (m.shoulderWaist && m.dressLength && m.shoulderWaist > m.dressLength) w.push('Shoulder to waist is longer than dress length.');
     $('#measureWarn').textContent = w.join(' ');
   }
 
@@ -229,10 +227,10 @@
   async function addFiles(list) {
     const err = $('#refError'); err.textContent = '';
     for (const file of list) {
-      if (state.files.length >= MAX_FILES) { err.textContent = `You can add up to ${MAX_FILES} photos.`; break; }
-      if (!file.type.startsWith('image/')) { err.textContent = 'Only photos can be added.'; continue; }
+      if (state.files.length >= MAX_FILES) { err.textContent = `Up to ${MAX_FILES} photos.`; break; }
+      if (!file.type.startsWith('image/')) { err.textContent = 'Photos only.'; continue; }
       try { state.files.push(await compress(file)); }
-      catch { err.textContent = 'One of those photos could not be read. Try another.'; }
+      catch { err.textContent = 'Could not read that photo.'; }
     }
     renderThumbs();
   }
@@ -268,13 +266,12 @@
     }).join('');
     $('#review').innerHTML = `
       <div class="review__block"><h5>${esc(o.product.name)}</h5>
-        <p>${o.product.price != null ? money(o.product.price) : 'Price confirmed when we contact you'}</p></div>
+        <p>${o.product.price != null ? money(o.product.price) : 'Price confirmed by phone'}</p></div>
       <div class="review__block"><h5>You</h5>
         <p>${esc(o.customer.name)}<br>${esc(o.customer.phone)}<br>${esc(o.customer.address)}${o.customer.needBy ? '<br>Needed by ' + esc(o.customer.needBy) : ''}</p></div>
       <div class="review__block"><h5>Measurements</h5><dl class="review__meas">${meas}</dl></div>
       <div class="review__block"><h5>Style</h5>
-        <p>${o.notes ? esc(o.notes) : 'No notes'}<br>${o.photos} reference photo${o.photos === 1 ? '' : 's'}</p></div>`;
-    $('#reviewNote').textContent = 'We will contact you to confirm the details and arrange payment before we start sewing.';
+        <p>${o.notes ? esc(o.notes) + '<br>' : ''}${o.photos} photo${o.photos === 1 ? '' : 's'}</p></div>`;
   }
 
   const ref = () => 'RPH-' + Date.now().toString(36).slice(-5).toUpperCase() + Math.random().toString(36).slice(2, 4).toUpperCase();
@@ -299,15 +296,15 @@
       }
     } catch (e) {
       nextBtn.disabled = false; nextBtn.textContent = 'Place order';
-      return fail('We could not send your order. Please check your connection and try again.');
+      return fail('Could not send. Check your connection and try again.');
     }
     clearDraft();
     nextBtn.disabled = false; nextBtn.textContent = 'Place order';
     $('#doneRef').textContent = order.reference;
-    $('#doneMsg').textContent = `Thank you, ${order.customer.name.split(' ')[0]}. We'll contact you on ${order.customer.phone} to confirm your order and arrange payment.`;
+    $('#doneMsg').textContent = `Thank you, ${order.customer.name.split(' ')[0]}. We'll call you on ${order.customer.phone} to confirm.`;
     const dev = $('#devNote');
     dev.hidden = !!config.orderEndpoint;
-    dev.textContent = 'Test mode: this order was saved on this device only and has not been sent to the Raph team.';
+    dev.textContent = 'Test mode: saved on this device only, not sent to Raph.';
     showStep('done');
   }
 

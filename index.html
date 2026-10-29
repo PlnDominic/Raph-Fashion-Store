@@ -84,7 +84,6 @@
     <form class="order__form" id="orderForm" novalidate>
       <header class="order__top">
         <div>
-          <p class="eyebrow" id="orderEyebrow">Your order</p>
           <h3 id="orderTitle">Order</h3>
         </div>
         <button type="button" class="order__close" id="orderClose" aria-label="Close">&times;</button>
@@ -98,41 +97,39 @@
             <input name="name" autocomplete="name" required>
           </label>
           <label class="field">Phone / WhatsApp
-            <input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="e.g. 024 123 4567" required>
-            <small>We'll use this to confirm your order.</small>
+            <input name="phone" type="tel" inputmode="tel" autocomplete="tel" required>
           </label>
-          <label class="field">Delivery town / address
+          <label class="field">Delivery address
             <input name="address" autocomplete="street-address" required>
           </label>
-          <label class="field">Date you need it by <span class="opt">(optional)</span>
+          <label class="field">Needed by <span class="opt">(optional)</span>
             <input name="needBy" type="date">
           </label>
         </section>
 
         <section data-step="1" hidden>
           <div class="order__row">
-            <h4>Your measurements</h4>
+            <h4>Measurements</h4>
             <div class="seg" role="group" aria-label="Unit">
               <button type="button" data-unit="cm" class="is-on" aria-pressed="true">cm</button>
               <button type="button" data-unit="in" aria-pressed="false">in</button>
             </div>
           </div>
-          <p class="hint">Measure over light clothing, with a soft tape held snug but not tight. Ask someone to help for the most accurate result.</p>
           <div class="measure" id="measureFields"></div>
           <p class="warn" id="measureWarn" role="status"></p>
         </section>
 
         <section data-step="2" hidden>
-          <h4>Style &amp; photos</h4>
-          <label class="field">Fabric, colour and any changes <span class="opt" id="styleOpt">(optional)</span>
-            <textarea name="notes" rows="3" placeholder="e.g. same dress in emerald green, add sleeves"></textarea>
+          <h4>Style</h4>
+          <label class="field">Notes <span class="opt" id="styleOpt">(optional)</span>
+            <textarea name="notes" rows="2" placeholder="Colour, fabric, changes"></textarea>
           </label>
           <div class="field">
-            <span id="refLabel">Style reference photos</span>
+            <span id="refLabel">Photos</span>
             <label class="drop" for="refInput">
               <input id="refInput" type="file" accept="image/*" multiple>
               <strong>Add photos</strong>
-              <span>Up to 5. A picture of the style you want, or inspiration.</span>
+              <span>Up to 5</span>
             </label>
             <ul class="thumbs" id="thumbs"></ul>
             <small id="refError" class="err" role="alert"></small>
@@ -140,9 +137,8 @@
         </section>
 
         <section data-step="3" hidden>
-          <h4>Check your order</h4>
+          <h4>Review</h4>
           <div id="review" class="review"></div>
-          <p class="hint" id="reviewNote"></p>
         </section>
 
         <section data-step="done" hidden>
