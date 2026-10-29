@@ -48,7 +48,7 @@
             <p class="card__meta"><strong>${price}</strong>${lead}</p>
             <div class="card__actions">
               ${p.readyMade ? `<button class="btn" type="button" data-add="${p.id}">Add to cart</button>` : ''}
-              <button class="btn ${p.readyMade ? 'btn--ghost' : ''}" type="button" data-order="${p.id}">Made to measure</button>
+              <button class="btn ${p.readyMade ? 'btn--ghost' : ''}" type="button" data-order="${p.id}">Get it tailored</button>
             </div>
           </div>
         </article>`;
