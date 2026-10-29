@@ -295,7 +295,7 @@
     }
   }
 
-  const ref = () => 'RPH-' + Date.now().toString(36).slice(-5).toUpperCase() + Math.random().toString(36).slice(2, 4).toUpperCase();
+  const ref = () => 'MAVE-' + Date.now().toString(36).slice(-5).toUpperCase() + Math.random().toString(36).slice(2, 4).toUpperCase();
 
   async function submit() {
     const order = Object.assign({ reference: ref(), placedAt: new Date().toISOString() }, collect());
@@ -312,7 +312,7 @@
     $('#doneMsg').textContent = `Thank you, ${order.customer.name.split(' ')[0]}. We'll call you on ${order.customer.phone} to confirm.`;
     const dev = $('#devNote');
     dev.hidden = !!config.orderEndpoint;
-    dev.textContent = 'Test mode: saved on this device only, not sent to Raph.';
+    dev.textContent = 'Test mode: saved on this device only, not sent to Mave Collection.';
     showStep('done');
   }
 

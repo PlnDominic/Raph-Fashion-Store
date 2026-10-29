@@ -1,4 +1,6 @@
-# Raph Fashion Store
+# Mave Collection
+
+_Rooted in elegance, designed to stand out._ Danfa, Accra.
 
 Made-to-measure gowns, sewn to order. A single scrolling storefront where customers pick a design, send their measurements, and pay online (Ghana: mobile money / card, GHS).
 

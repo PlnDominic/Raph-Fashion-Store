@@ -102,7 +102,7 @@
         <h4>Thank you</h4>
         <p class="done__ref">Reference <strong>${R.esc(doneInfo.ref)}</strong></p>
         <p>${R.esc(doneInfo.msg)}</p>
-        ${config.orderEndpoint ? '' : '<p class="devnote">Test mode: saved on this device only, not sent to Raph.</p>'}
+        ${config.orderEndpoint ? '' : '<p class="devnote">Test mode: saved on this device only, not sent to Mave Collection.</p>'}
       </div>`;
     foot.innerHTML = '<button type="button" class="btn" data-close>Back to the shop</button>';
   }

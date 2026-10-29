@@ -2,9 +2,10 @@
   --paper: #ffffff;
   --ink: #1f120b;
   --muted: #6b5a4e;
-  --ember: #fb233b;       /* accent: text and small details (Apple Music red) */
-  --glow: #fb233b;        /* accent: buttons */
-  --glow-dark: #d91c33;   /* accent: button hover */
+  --ember: #0c3925;       /* primary accent: text and small details (Mave green) */
+  --glow: #0c3925;        /* primary accent: buttons */
+  --glow-dark: #08301e;   /* primary accent: button hover */
+  --gold: #c7880f;        /* secondary accent, used sparingly: logo, "Collection", the hero's italic word */
   --line: rgba(31, 18, 11, 0.14);
   --serif: "Cormorant Garamond", Georgia, serif;
   --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -30,8 +31,9 @@ a { color: inherit; }
   pointer-events: none;
 }
 .topbar > * { pointer-events: auto; }
-.brand { font-family: var(--serif); font-weight: 600; font-size: 1.35rem; letter-spacing: 0.02em; text-decoration: none; }
-.brand span { font-weight: 400; font-style: italic; color: var(--ember); }
+.brand { display: inline-flex; align-items: center; gap: 10px; font-family: var(--serif); font-weight: 600; font-size: 1.35rem; letter-spacing: 0.02em; text-decoration: none; color: var(--ember); }
+.brand img { width: 40px; height: 40px; display: block; }
+.brand__name span { font-weight: 500; font-style: italic; color: var(--gold); }
 .topbar__actions { display: flex; align-items: center; gap: 10px; }
 .topbar__cta {
   font-size: 0.72rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; text-decoration: none;
@@ -60,7 +62,8 @@ a { color: inherit; }
 .eyebrow { margin: 0 0 14px; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.28em; text-transform: uppercase; color: var(--ember); }
 h1, h2 { font-family: var(--serif); font-weight: 500; line-height: 1.02; margin: 0; }
 h1 { font-size: clamp(2.8rem, 8.5vw, 6.2rem); }
-h1 em, h2 em { font-style: italic; color: var(--ember); }
+h1 em { font-style: italic; color: var(--gold); }
+h2 em { font-style: italic; color: var(--ember); }
 .lede { color: var(--muted); max-width: 30ch; margin: 18px 0 0; font-size: 1rem; }
 
 .specs { margin: 0; display: grid; gap: 14px; }
@@ -71,7 +74,7 @@ h1 em, h2 em { font-style: italic; color: var(--ember); }
   display: inline-block; padding: 16px 34px; border-radius: 999px; text-decoration: none;
   background: var(--glow); color: #fff; font-weight: 500; font-size: 0.82rem;
   letter-spacing: 0.16em; text-transform: uppercase;
-  box-shadow: 0 10px 30px rgba(251, 35, 59, 0.3);
+  box-shadow: 0 10px 30px rgba(12, 57, 37, 0.25);
   transition: transform 0.2s, background 0.2s;
 }
 .btn:hover { transform: translateY(-2px); background: var(--glow-dark); }
