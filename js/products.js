@@ -15,16 +15,6 @@ const heroFrame = (n) => `assets/hero-frames/${String(n).padStart(4, '0')}.webp`
 
 window.PRODUCTS = [
   {
-    id: 'sunset-kente-mermaid',
-    name: 'The Sunset Kente Mermaid',
-    readyMade: true,
-    price: 4800,
-    leadTime: null,
-    images: [1, 17, 33, 49, 65, 81, 97, 113].map(heroFrame),
-    gallery: [1, 25, 61, 89].map(heroFrame),
-    spin: Array.from({ length: 32 }, (_, i) => heroFrame(1 + i * 4)),
-  },
-  {
     id: 'ruby-kente-mermaid',
     name: 'The Ruby Kente Mermaid',
     readyMade: true,
@@ -39,6 +29,16 @@ window.PRODUCTS = [
     price: 4500,
     leadTime: null,
     images: ['assets/products/cocoa-kente-gown.webp'],
+  },
+  {
+    id: 'sunset-kente-mermaid',
+    name: 'The Sunset Kente Mermaid',
+    readyMade: true,
+    price: 4800,
+    leadTime: null,
+    images: [1, 17, 33, 49, 65, 81, 97, 113].map(heroFrame),
+    gallery: [1, 25, 61, 89].map(heroFrame),
+    spin: Array.from({ length: 32 }, (_, i) => heroFrame(1 + i * 4)),
   },
   {
     id: 'ivory-ombre-drape',
