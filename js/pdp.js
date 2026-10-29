@@ -8,7 +8,6 @@
 
   const $ = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(4, '0');
-  const url = (n) => `assets/hero-frames/${pad(n)}.webp`;
   const img = $('pdpImg');
   const main = $('pdpMain');
   let product = null, size = '', seq = [], at = 0;
@@ -17,12 +16,14 @@
     product = products.find((p) => p.id === id);
     if (!product) return;
     size = '';
-    const gallery = product.gallery || product.frames.slice(0, 4);
-    // the turnable sequence: every 4th hero frame when the dress has one, else the gallery
-    seq = product.spin ? Array.from({ length: 32 }, (_, i) => 1 + i * 4) : gallery;
+    const gallery = product.gallery || product.images;
+    // what dragging the big photo turns through: the dress's spin sequence if it has one, else the gallery
+    seq = product.spin || gallery;
 
-    $('pdpThumbs').innerHTML = gallery.map((n, i) =>
-      `<button type="button" class="pdp__thumb${i ? '' : ' is-on'}" data-frame="${n}" aria-label="View ${i + 1}"><img src="${url(n)}" alt=""></button>`).join('');
+    $('pdpThumbs').innerHTML = gallery.length > 1 ? gallery.map((u, i) =>
+      `<button type="button" class="pdp__thumb${i ? '' : ' is-on'}" data-src="${u}" aria-label="View ${i + 1}"><img src="${u}" alt=""></button>`).join('') : '';
+    dlg.querySelector('.pdp__gallery').classList.toggle('is-single', gallery.length < 2);
+    main.classList.toggle('can-turn', seq.length > 1);
     show(gallery[0]);
     img.alt = product.name;
     $('pdpName').textContent = product.name;
@@ -35,16 +36,16 @@
     $('pdpError').textContent = '';
     $('pdpTailor').dataset.order = product.id;
     $('pdpHint').hidden = !product.spin;
-    seq.forEach((n) => { new Image().src = url(n); });
+    seq.forEach((u) => { new Image().src = u; });
     if (!dlg.open) dlg.showModal();
     dlg.querySelector('.pdp__scroll').scrollTop = 0;
   }
 
-  function show(n) {
-    img.src = url(n);
-    const i = seq.indexOf(n);
+  function show(u) {
+    img.src = u;
+    const i = seq.indexOf(u);
     if (i >= 0) at = i;
-    dlg.querySelectorAll('.pdp__thumb').forEach((t) => t.classList.toggle('is-on', Number(t.dataset.frame) === n));
+    dlg.querySelectorAll('.pdp__thumb').forEach((t) => t.classList.toggle('is-on', t.dataset.src === u));
   }
 
   // drag across the main photo to turn the dress
@@ -58,7 +59,7 @@
     if (!drag) return;
     const step = main.clientWidth / seq.length / 1.2;
     const i = ((drag.from + Math.round((drag.x - e.clientX) / step)) % seq.length + seq.length) % seq.length;
-    if (i !== at) { at = i; img.src = url(seq[i]); dlg.querySelectorAll('.pdp__thumb').forEach((t) => t.classList.toggle('is-on', Number(t.dataset.frame) === seq[i])); }
+    if (i !== at) { at = i; img.src = seq[i]; dlg.querySelectorAll('.pdp__thumb').forEach((t) => t.classList.toggle('is-on', t.dataset.src === seq[i])); }
   });
   const end = () => { drag = null; };
   main.addEventListener('pointerup', end);
@@ -69,7 +70,7 @@
     const thumb = t.closest('.pdp__thumb');
     const chip = t.closest('.chip');
     if (t === dlg || t.closest('[data-pdp-close]')) dlg.close();
-    else if (thumb) show(Number(thumb.dataset.frame));
+    else if (thumb) show(thumb.dataset.src);
     else if (chip) {
       size = chip.dataset.size;
       dlg.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', c === chip));

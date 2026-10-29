@@ -31,17 +31,15 @@
   const STEP_NAMES = ['Details', 'Measure', 'Style', 'Review'];
 
   // ---------- shop grid ----------
-  function frameUrl(n) { return `assets/hero-frames/${pad(n)}.webp`; }
-
   function renderGrid() {
     const cards = products.map((p) => {
       const price = p.price != null ? money(p.price) : 'Price on request';
       const lead = p.leadTime ? `<span>Ready in ${p.leadTime}</span>` : '';
       return `
         <article class="card" data-id="${p.id}">
-          <div class="card__media" data-frames="${p.frames.join(',')}" data-view="${p.id}">
-            <img src="${frameUrl(p.frames[0])}" alt="${p.name}, shown turning" loading="lazy" width="496" height="800">
-            <span class="card__turn" aria-hidden="true">Drag to turn</span>
+          <div class="card__media" data-view="${p.id}"${p.images.length > 1 ? ` data-images="${p.images.join('|')}"` : ''}>
+            <img src="${p.images[0]}" alt="${p.name}" loading="lazy" width="496" height="800">
+            ${p.images.length > 1 ? '<span class="card__turn" aria-hidden="true">Drag to turn</span>' : ''}
           </div>
           <div class="card__body">
             <h3><button type="button" class="card__name" data-view="${p.id}">${p.name}</button></h3>
@@ -67,24 +65,24 @@
       </article>`;
     grid.innerHTML = cards + custom;
 
-    // drag / hover across the photo to turn the dress
-    grid.querySelectorAll('.card__media[data-frames]').forEach((media) => {
-      const frames = media.dataset.frames.split(',').map(Number);
+    // drag / hover across the photo to flick through the dress's photos
+    grid.querySelectorAll('.card__media[data-images]').forEach((media) => {
+      const images = media.dataset.images.split('|');
       const img = media.querySelector('img');
       let last = 0;
       const turn = (clientX) => {
         const r = media.getBoundingClientRect();
         const t = Math.min(0.999, Math.max(0, (clientX - r.left) / r.width));
-        const i = Math.floor(t * frames.length);
-        if (i !== last) { last = i; img.src = frameUrl(frames[i]); }
+        const i = Math.floor(t * images.length);
+        if (i !== last) { last = i; img.src = images[i]; }
       };
       let downX = null;
       media.addEventListener('pointermove', (e) => turn(e.clientX));
       media.addEventListener('pointerdown', (e) => { downX = e.clientX; turn(e.clientX); });
       // a tap opens the dress page; a drag only turns the dress
       media.addEventListener('click', (e) => { if (downX != null && Math.abs(e.clientX - downX) > 8) e.stopPropagation(); downX = null; });
-      media.addEventListener('pointerleave', () => { last = 0; img.src = frameUrl(frames[0]); });
-      frames.forEach((n) => { new Image().src = frameUrl(n); });   // warm the cache
+      media.addEventListener('pointerleave', () => { last = 0; img.src = images[0]; });
+      images.forEach((u) => { new Image().src = u; });   // warm the cache
     });
   }
 

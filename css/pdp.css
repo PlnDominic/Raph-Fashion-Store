@@ -18,7 +18,10 @@
 .pdp__thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .pdp__thumb.is-on { border: 2px solid var(--ink); }
 .pdp__main { position: relative; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; display: grid; place-items: center; cursor: grab; touch-action: pan-y; user-select: none; max-height: calc(min(860px, 100dvh - 48px) - 64px); }
-.pdp__main:active { cursor: grabbing; }
+.pdp__main:not(.can-turn) { cursor: default; }
+.pdp__main.can-turn:active { cursor: grabbing; }
+.pdp__gallery.is-single { grid-template-columns: 1fr; }
+.pdp__gallery.is-single .pdp__thumbs { display: none; }
 .pdp__main img { width: 100%; height: 100%; max-height: inherit; object-fit: contain; display: block; pointer-events: none; }
 .pdp__hint { position: absolute; right: 14px; bottom: 20px; font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); pointer-events: none; }
 

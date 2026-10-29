@@ -5,11 +5,14 @@
 //   readyMade true if a finished dress can be bought straight away (adds an "Add to cart" button)
 //   price     number in GHS, or null to show "Price on request"
 //   leadTime  e.g. "3 to 4 weeks", or null to hide it
-//   frames    which hero frames (1-128) to use as the card photos; scroll/drag over the card to turn the dress
-//   gallery   frames shown as thumbnails on the dress page (front, side, back, ...)
-//   spin      true if the dress page can turn through the full hero sequence when dragged
+//   images    photos for the card (first one is the main photo; drag across the card to flick through the rest)
+//   gallery   photos shown as thumbnails on the dress page (defaults to `images`)
+//   spin      optional photo sequence the dress page turns through when the big photo is dragged
 //
-// Photos come from assets/hero-frames/. For new dresses add a folder of photos and point `images` at it instead.
+// Shop photos live in assets/products/. Put the original in assets/source/products/ and run
+// scripts/cutout_products.py to get a white-background version the same shape as the others.
+const heroFrame = (n) => `assets/hero-frames/${String(n).padStart(4, '0')}.webp`;
+
 window.PRODUCTS = [
   {
     id: 'sunset-kente-mermaid',
@@ -17,9 +20,33 @@ window.PRODUCTS = [
     readyMade: true,
     price: null,
     leadTime: null,
-    frames: [1, 17, 33, 49, 65, 81, 97, 113],
-    gallery: [1, 25, 61, 89],
-    spin: true,
+    images: [1, 17, 33, 49, 65, 81, 97, 113].map(heroFrame),
+    gallery: [1, 25, 61, 89].map(heroFrame),
+    spin: Array.from({ length: 32 }, (_, i) => heroFrame(1 + i * 4)),
+  },
+  {
+    id: 'ruby-kente-mermaid',
+    name: 'The Ruby Kente Mermaid',
+    readyMade: true,
+    price: 4000,
+    leadTime: null,
+    images: ['assets/products/ruby-kente-mermaid.webp'],
+  },
+  {
+    id: 'cocoa-kente-gown',
+    name: 'The Cocoa Kente Gown',
+    readyMade: true,
+    price: 4500,
+    leadTime: null,
+    images: ['assets/products/cocoa-kente-gown.webp'],
+  },
+  {
+    id: 'ivory-ombre-drape',
+    name: 'The Ivory Ombré Drape',
+    readyMade: true,
+    price: 3000,
+    leadTime: null,
+    images: ['assets/products/ivory-ombre-drape.webp'],
   },
 ];
 

@@ -56,7 +56,7 @@
       const opts = ['<option value="">Choose size</option>'].concat(SIZES.map((s) => `<option${s === i.size ? ' selected' : ''}>${R.esc(s)}</option>`)).join('');
       return `
         <li class="line" data-id="${p.id}">
-          <img src="assets/hero-frames/${pad(p.frames[0])}.webp" alt="" width="64" height="104">
+          <img src="${p.images[0]}" alt="" width="64" height="104">
           <div class="line__info">
             <h4>${R.esc(p.name)}</h4>
             <p>${priceOf(p)}</p>
