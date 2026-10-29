@@ -18,9 +18,11 @@ Then open http://localhost:8000.
 
 ### Changing the hero video
 
-1. Put the new Flow video in `assets/source/`.
-2. Run `./scripts/extract-hero-frames.sh <video> full 0 16` (use a panel number 0-3 instead of `full` for a 4-up grid like the current source).
-3. Update `data-frames` on `#hero` in `index.html` to the frame count the script prints.
+The hero expects a clip of the model on a plain white studio backdrop (generated in Google Flow).
+
+1. Put the new video at `assets/source/hero.mp4`.
+2. Run `python3 scripts/extract_hero_frames.py` (needs ffmpeg, Pillow, numpy). It whitens the backdrop, crops each frame to follow the model, and writes WebP frames to `assets/hero-frames/`.
+3. Set `data-frames` on `#hero` in `index.html` to the frame count the script prints.
 
 ## Roadmap
 

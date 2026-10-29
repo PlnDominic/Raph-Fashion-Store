@@ -5,15 +5,14 @@
 
   const stage = hero.querySelector('.hero__stage');
   const dress = hero.querySelector('.hero__dress');
-  const bg = hero.querySelector('.hero__bg');
   const beats = [...hero.querySelectorAll('.beat')];
   const hint = hero.querySelector('.hero__hint');
   const total = Number(hero.dataset.frames);
   const path = hero.dataset.path;
+  const ext = hero.dataset.ext || 'jpg';
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const dctx = dress.getContext('2d');
-  const bctx = bg.getContext('2d');
   const frames = new Array(total);
   let loaded = 0;
   let target = 0;   // where scroll says we should be (0..1)
@@ -30,9 +29,6 @@
     h = stage.clientHeight;
     dress.width = Math.round(w * dpr);
     dress.height = Math.round(h * dpr);
-    // the blurred backdrop doesn't need resolution
-    bg.width = Math.round(w / 6);
-    bg.height = Math.round(h / 6);
     drawnIndex = -1;
     draw(true);
   }
@@ -52,28 +48,16 @@
 
     const cw = dress.width, ch = dress.height;
     const iw = img.naturalWidth, ih = img.naturalHeight;
-    // phones (portrait): fill the screen. wide screens: full height, centred.
+    // the frames have a pure white backdrop, so they sit straight on the white page.
+    // phones: fit the width and sit toward the top, leaving room for the text below.
+    // wide screens: full height, centred.
     const portrait = w / h < 0.75;
-    const scale = portrait ? Math.max(cw / iw, ch / ih) : ch / ih;
+    let scale = portrait ? cw / iw : ch / ih;
+    if (ih * scale > ch * 0.86 && portrait) scale = (ch * 0.86) / ih;
     const dw = iw * scale, dh = ih * scale;
+    const dy = portrait ? ch * 0.07 : (ch - dh) / 2;
     dctx.clearRect(0, 0, cw, ch);
-    const dx = (cw - dw) / 2;
-    dctx.drawImage(img, dx, (ch - dh) / 2, dw, dh);
-    if (!portrait) {
-      // melt the left/right edges of the photo into the backdrop
-      const g = dctx.createLinearGradient(dx, 0, dx + dw, 0);
-      g.addColorStop(0, 'rgba(0,0,0,0)');
-      g.addColorStop(0.22, 'rgba(0,0,0,1)');
-      g.addColorStop(0.78, 'rgba(0,0,0,1)');
-      g.addColorStop(1, 'rgba(0,0,0,0)');
-      dctx.globalCompositeOperation = 'destination-in';
-      dctx.fillStyle = g;
-      dctx.fillRect(0, 0, cw, ch);
-      dctx.globalCompositeOperation = 'source-over';
-    }
-
-    const bs = Math.max(bg.width / iw, bg.height / ih);
-    bctx.drawImage(img, (bg.width - iw * bs) / 2, (bg.height - ih * bs) / 2, iw * bs, ih * bs);
+    dctx.drawImage(img, (cw - dw) / 2, dy, dw, dh);
   }
 
   function updateBeats(p) {
@@ -116,7 +100,7 @@
         if (i === 0) resize();
         if (loaded === total) hero.classList.add('is-loaded');
       };
-      img.src = path + pad(i + 1) + '.jpg';
+      img.src = path + pad(i + 1) + '.' + ext;
       frames[i] = img;
     }
   }
