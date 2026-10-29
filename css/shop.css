@@ -32,22 +32,36 @@
 .btn:disabled { opacity: 0.6; cursor: progress; }
 button.btn { font-family: inherit; cursor: pointer; border: 0; }
 
-.footer { padding: 48px var(--gutter) calc(36px + env(safe-area-inset-bottom)); text-align: center; color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); }
+.footer { border-top: 1px solid var(--line); padding: clamp(48px, 7vw, 72px) var(--gutter) calc(20px + env(safe-area-inset-bottom)); color: var(--ink); font-size: 0.92rem; }
 .footer p { margin: 0; }
-.footer__logo { width: 64px; height: 64px; display: block; margin: 0 auto 10px; }
-.footer__tag { font-family: var(--serif); font-size: 1.15rem; font-style: italic; color: var(--ember); margin-bottom: 22px !important; }
-.footer__contact { list-style: none; margin: 0 auto 26px; padding: 0; display: grid; gap: 10px; max-width: 900px; }
-.footer__contact li { color: var(--ink); }
-.footer__contact span { display: block; font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
-.footer__contact a { color: var(--ember); font-weight: 500; text-decoration: none; }
-.footer__contact a:hover { text-decoration: underline; }
-.footer__social { display: flex; justify-content: center; align-items: center; }
-.footer__social a { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); color: var(--ember); transition: background 0.2s, color 0.2s; }
-.footer__social a:hover { background: var(--ember); color: #fff; text-decoration: none; }
-@media (min-width: 820px) { .footer__contact { grid-template-columns: repeat(4, 1fr); } }
-.footer__credit { font-size: 0.78rem; }
-.footer__credit a { color: var(--ink); text-decoration: none; font-weight: 500; }
-.footer__credit a:hover { color: var(--ember); }
+.footer__inner { max-width: 1100px; margin: 0 auto; display: grid; gap: 32px; grid-template-columns: 1fr; }
+.footer__brand { display: flex; align-items: center; gap: 14px; }
+.footer__brand img { width: 56px; height: 56px; flex: none; }
+.footer__name { font-family: var(--serif); font-weight: 600; font-size: 1.5rem; line-height: 1.1; color: var(--ember); }
+.footer__name span { font-style: italic; font-weight: 500; color: var(--gold); }
+.footer__tag { font-family: var(--serif); font-style: italic; font-size: 1.05rem; color: var(--muted); margin-top: 2px !important; }
+.footer__col h3 { margin: 0 0 10px; font-family: var(--sans); font-size: 0.68rem; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
+.footer__col p + p { margin-top: 4px; }
+.footer__col a { color: var(--ember); font-weight: 500; text-decoration: none; }
+.footer__col a:hover { text-decoration: underline; }
+.footer__chat { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+/* official brand logos and colours (Simple Icons, CC0) */
+.footer__chat .wa { display: inline-flex; align-items: center; gap: 8px; padding: 5px 14px 5px 5px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink); font-size: 0.86rem; text-decoration: none; transition: border-color 0.2s; }
+.footer__chat .wa:hover { border-color: #25d366; text-decoration: none; }
+.wa__logo { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #25d366; font-style: normal; flex: none; }
+.wa__logo svg { display: block; }
+.footer__chat .snap { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 11px; background: #fffc00; transition: transform 0.2s; }
+.footer__chat .snap svg { width: 24px; height: 24px; }
+.footer__chat .snap:hover { transform: translateY(-2px); }
+
+.footer__bottom { max-width: 1100px; margin: 40px auto 0; padding-top: 18px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 0.8rem; }
+.footer__bottom a { color: var(--ink); font-weight: 500; text-decoration: none; }
+.footer__bottom a:hover { color: var(--ember); }
+
+@media (min-width: 820px) {
+  .footer__inner { grid-template-columns: 1.7fr 0.7fr 0.8fr 1.5fr; align-items: start; gap: 36px; }
+}
 
 /* ---------- order dialog ---------- */
 body:has(dialog[open]) { overflow: hidden; }

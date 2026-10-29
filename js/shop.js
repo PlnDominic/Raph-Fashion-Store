@@ -341,6 +341,8 @@
   // ---------- wiring ----------
   buildMeasureFields();
   renderGrid();
+  const year = document.getElementById('year');
+  if (year) year.textContent = new Date().getFullYear();
 
   document.addEventListener('click', (e) => {
     const trigger = e.target.closest('[data-order]');
