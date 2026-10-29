@@ -24,11 +24,20 @@ The hero expects a clip of the model on a plain white studio backdrop (generated
 2. Run `python3 scripts/extract_hero_frames.py` (needs ffmpeg, Pillow, numpy). It whitens the backdrop, crops each frame to follow the model, and writes WebP frames to `assets/hero-frames/`.
 3. Set `data-frames` on `#hero` in `index.html` to the frame count the script prints.
 
+## Shop and orders
+
+`js/products.js` is the catalogue: add a dress by adding an object (name, blurb, price in GHS, lead time, photos). Leave `price` / `leadTime` as `null` and the card shows "Price on request" and no lead time.
+
+"Make this for me" (hero) and every "Order" button open the order sheet (`js/shop.js`): details, measurements (cm or in, with range checks), style photos (up to 5, shrunk on the phone before upload) and a review step. A half-finished form is kept in the browser.
+
+**Orders are not delivered anywhere yet.** `RAPH_CONFIG.orderEndpoint` in `js/products.js` is `null`, so a placed order is only saved in that browser (`localStorage`, key `raph_orders`) and the confirmation screen says "Test mode". Set it to a URL that accepts a multipart POST (`order` = JSON, `photos` = the images) once the backend exists.
+
 ## Roadmap
 
 - [x] Scroll hero
-- [ ] Collection of dresses
-- [ ] Measurement form with style-reference uploads
+- [x] Shop grid and order sheet (details, measurements, style photos, review)
+- [ ] Real dress details: name, specs, price, lead time
+- [ ] More dresses in the collection
+- [ ] Order storage (database + photo storage) and a team view of incoming orders
 - [ ] Paystack checkout (mobile money + card)
-- [ ] Order storage and admin view
 - [ ] Order emails (on hold)

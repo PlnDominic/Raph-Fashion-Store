@@ -20,12 +20,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/shop.css">
 </head>
 <body>
 
   <header class="topbar">
     <a class="brand" href="#top">Raph <span>Fashion Store</span></a>
-    <a class="topbar__cta" href="#order">Order</a>
+    <a class="topbar__cta" href="#shop">Shop</a>
   </header>
 
   <main id="top">
@@ -54,8 +55,8 @@
 
         <div class="beat beat--cta" data-from="0.7" data-to="9">
           <p class="eyebrow">Yours, in your size</p>
-          <a class="btn" href="#order">Make this for me</a>
-          <a class="link" href="#how">How it works</a>
+          <a class="btn" href="#shop" data-order="sunset-kente-mermaid">Make this for me</a>
+          <a class="link" href="#shop">Browse the shop</a>
         </div>
 
         <div class="hero__loading" aria-live="polite"><span></span></div>
@@ -64,24 +65,108 @@
       </div>
     </section>
 
-    <section class="how" id="how">
-      <p class="eyebrow">How it works</p>
-      <h2>From your measurements<br>to your door.</h2>
-      <ol class="steps">
-        <li><b>Choose</b><span>Pick a design, or upload a photo of the style you have in mind.</span></li>
-        <li><b>Measure</b><span>Follow our guided form, one measurement at a time.</span></li>
-        <li><b>Pay online</b><span>Mobile money or card, in cedis.</span></li>
-        <li><b>We sew</b><span>Cut and stitched by our team to your measurements.</span></li>
-      </ol>
+    <section class="shop" id="shop" aria-labelledby="shop-title">
+      <header class="shop__head">
+        <p class="eyebrow">The shop</p>
+        <h2 id="shop-title">Pick a design.<br><em>We'll make it</em> to fit.</h2>
+        <p class="lede">Every piece is sewn to order from your own measurements.</p>
+      </header>
+      <div class="shop__grid" id="shopGrid" aria-live="polite"></div>
     </section>
 
-    <section class="order" id="order">
-      <p class="eyebrow">Next</p>
-      <h2>Measurement &amp; order form</h2>
-      <p class="lede">Coming in the next build.</p>
-    </section>
   </main>
 
+  <footer class="footer">
+    <p><strong>Raph Fashion Store</strong> &middot; Made to measure, Ghana</p>
+  </footer>
+
+  <dialog class="order" id="orderDialog" aria-labelledby="orderTitle">
+    <form class="order__form" id="orderForm" novalidate>
+      <header class="order__top">
+        <div>
+          <p class="eyebrow" id="orderEyebrow">Your order</p>
+          <h3 id="orderTitle">Order</h3>
+        </div>
+        <button type="button" class="order__close" id="orderClose" aria-label="Close">&times;</button>
+      </header>
+      <ol class="order__steps" id="orderSteps" aria-hidden="true"></ol>
+
+      <div class="order__body" id="orderBody">
+        <section data-step="0">
+          <h4>Your details</h4>
+          <label class="field">Full name
+            <input name="name" autocomplete="name" required>
+          </label>
+          <label class="field">Phone / WhatsApp
+            <input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="e.g. 024 123 4567" required>
+            <small>We'll use this to confirm your order.</small>
+          </label>
+          <label class="field">Delivery town / address
+            <input name="address" autocomplete="street-address" required>
+          </label>
+          <label class="field">Date you need it by <span class="opt">(optional)</span>
+            <input name="needBy" type="date">
+          </label>
+        </section>
+
+        <section data-step="1" hidden>
+          <div class="order__row">
+            <h4>Your measurements</h4>
+            <div class="seg" role="group" aria-label="Unit">
+              <button type="button" data-unit="cm" class="is-on" aria-pressed="true">cm</button>
+              <button type="button" data-unit="in" aria-pressed="false">in</button>
+            </div>
+          </div>
+          <p class="hint">Measure over light clothing, with a soft tape held snug but not tight. Ask someone to help for the most accurate result.</p>
+          <div class="measure" id="measureFields"></div>
+          <p class="warn" id="measureWarn" role="status"></p>
+        </section>
+
+        <section data-step="2" hidden>
+          <h4>Style &amp; photos</h4>
+          <label class="field">Fabric, colour and any changes <span class="opt" id="styleOpt">(optional)</span>
+            <textarea name="notes" rows="3" placeholder="e.g. same dress in emerald green, add sleeves"></textarea>
+          </label>
+          <div class="field">
+            <span id="refLabel">Style reference photos</span>
+            <label class="drop" for="refInput">
+              <input id="refInput" type="file" accept="image/*" multiple>
+              <strong>Add photos</strong>
+              <span>Up to 5. A picture of the style you want, or inspiration.</span>
+            </label>
+            <ul class="thumbs" id="thumbs"></ul>
+            <small id="refError" class="err" role="alert"></small>
+          </div>
+        </section>
+
+        <section data-step="3" hidden>
+          <h4>Check your order</h4>
+          <div id="review" class="review"></div>
+          <p class="hint" id="reviewNote"></p>
+        </section>
+
+        <section data-step="done" hidden>
+          <div class="done">
+            <div class="done__tick" aria-hidden="true">&#10003;</div>
+            <h4>Order received</h4>
+            <p class="done__ref">Reference <strong id="doneRef"></strong></p>
+            <p id="doneMsg"></p>
+            <p class="devnote" id="devNote" hidden></p>
+            <button type="button" class="btn" id="doneClose">Back to the shop</button>
+          </div>
+        </section>
+      </div>
+
+      <footer class="order__nav" id="orderNav">
+        <button type="button" class="btn btn--ghost" id="orderBack">Back</button>
+        <p class="err" id="orderError" role="alert"></p>
+        <button type="button" class="btn" id="orderNext">Next</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <script src="js/products.js"></script>
   <script src="js/hero.js"></script>
+  <script src="js/shop.js"></script>
 </body>
 </html>
