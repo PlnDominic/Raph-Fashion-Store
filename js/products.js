@@ -8,7 +8,6 @@
 //   frames    which hero frames (1-128) to use as the card photos; scroll/drag over the card to turn the dress
 //   gallery   frames shown as thumbnails on the dress page (front, side, back, ...)
 //   spin      true if the dress page can turn through the full hero sequence when dragged
-//   fitFrame  the frame sent to virtual fit as the garment photo (a clear front view)
 //
 // Photos come from assets/hero-frames/. For new dresses add a folder of photos and point `images` at it instead.
 window.PRODUCTS = [
@@ -21,7 +20,6 @@ window.PRODUCTS = [
     frames: [1, 17, 33, 49, 65, 81, 97, 113],
     gallery: [1, 25, 61, 89],
     spin: true,
-    fitFrame: 1,
   },
 ];
 
@@ -32,9 +30,4 @@ window.RAPH_CONFIG = {
   // Where finished orders are sent (POST, multipart form). While this is null, orders are only
   // saved in the browser they were made in, and the confirmation screen says so.
   orderEndpoint: null,
-  // Virtual fit. A server URL that takes a POST (multipart: `person` = the customer's photo,
-  // `garmentUrl` = full URL of the dress photo, `productId`) and replies with JSON { image: "<url or data URL>" }.
-  // It should call an AI try-on model. While this is null, the Virtual Fit screen works up to the
-  // "See it on me" step and then says it isn't switched on yet; photos never leave the device.
-  tryOnEndpoint: null,
 };

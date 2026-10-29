@@ -1,4 +1,4 @@
-// Dress page: gallery (drag to turn), size, Add to cart / Get it tailored, Virtual fit.
+// Dress page: gallery (drag to turn), size, Add to cart / Get it tailored.
 (function () {
   const R = window.Raph;
   const products = window.PRODUCTS || [];
@@ -34,7 +34,6 @@
     $('pdpSizeLabel').textContent = 'choose';
     $('pdpError').textContent = '';
     $('pdpTailor').dataset.order = product.id;
-    $('pdpFitBtn').dataset.fit = product.id;
     $('pdpHint').hidden = !product.spin;
     seq.forEach((n) => { new Image().src = url(n); });
     if (!dlg.open) dlg.showModal();
