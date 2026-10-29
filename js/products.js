@@ -18,7 +18,7 @@ window.PRODUCTS = [
     id: 'sunset-kente-mermaid',
     name: 'The Sunset Kente Mermaid',
     readyMade: true,
-    price: null,
+    price: 4800,
     leadTime: null,
     images: [1, 17, 33, 49, 65, 81, 97, 113].map(heroFrame),
     gallery: [1, 25, 61, 89].map(heroFrame),
