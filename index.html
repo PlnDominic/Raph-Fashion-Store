@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Raff Fashion Store</title>
+  <meta name="description" content="Made-to-measure gowns, sewn for you. Choose a design, send your measurements, and we stitch it to fit.">
+  <meta name="theme-color" content="#1a0d07">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <a class="brand" href="#top">Raff <span>Fashion Store</span></a>
+    <a class="topbar__cta" href="#order">Order</a>
+  </header>
+
+  <main id="top">
+
+    <!-- Scroll-scrubbed hero: the page is tall, the stage is pinned, scrolling plays the dress turning. -->
+    <section class="hero" id="hero" data-frames="114" data-path="assets/hero-frames/">
+      <div class="hero__stage">
+        <canvas class="hero__bg" aria-hidden="true"></canvas>
+        <div class="hero__tint" aria-hidden="true"></div>
+        <canvas class="hero__dress" role="img" aria-label="A model turning in an orange beaded mermaid gown with a kente-print train"></canvas>
+        <div class="hero__vignette" aria-hidden="true"></div>
+
+        <div class="beat beat--intro" data-from="0" data-to="0.28">
+          <p class="eyebrow">Made to measure &middot; Ghana</p>
+          <h1>Sewn for<br><em>your</em> body.</h1>
+          <p class="lede">Pick a design, send your measurements, and our team stitches it to fit.</p>
+        </div>
+
+        <div class="beat beat--specs" data-from="0.3" data-to="0.66">
+          <p class="eyebrow">The Sunset Kente Mermaid</p>
+          <dl class="specs">
+            <div><dt>Silhouette</dt><dd>Fitted mermaid</dd></div>
+            <div><dt>Bodice</dt><dd>Hand-beaded corset</dd></div>
+            <div><dt>Train</dt><dd>Kente print</dd></div>
+            <div><dt>Finish</dt><dd>Matching beaded fan</dd></div>
+          </dl>
+        </div>
+
+        <div class="beat beat--cta" data-from="0.7" data-to="9">
+          <p class="eyebrow">Yours, in your size</p>
+          <a class="btn" href="#order">Make this for me</a>
+          <a class="link" href="#how">How it works</a>
+        </div>
+
+        <div class="hero__loading" aria-live="polite"><span></span></div>
+        <div class="hero__hint" aria-hidden="true">Scroll</div>
+        <div class="hero__progress" aria-hidden="true"><i></i></div>
+      </div>
+    </section>
+
+    <section class="how" id="how">
+      <p class="eyebrow">How it works</p>
+      <h2>From your measurements<br>to your door.</h2>
+      <ol class="steps">
+        <li><b>Choose</b><span>Pick a design, or upload a photo of the style you have in mind.</span></li>
+        <li><b>Measure</b><span>Follow our guided form, one measurement at a time.</span></li>
+        <li><b>Pay online</b><span>Mobile money or card, in cedis.</span></li>
+        <li><b>We sew</b><span>Cut and stitched by our team to your measurements.</span></li>
+      </ol>
+    </section>
+
+    <section class="order" id="order">
+      <p class="eyebrow">Next</p>
+      <h2>Measurement &amp; order form</h2>
+      <p class="lede">Coming in the next build.</p>
+    </section>
+  </main>
+
+  <script src="js/hero.js"></script>
+</body>
+</html>
