@@ -26,7 +26,7 @@ The hero expects a clip of the model on a plain white studio backdrop (generated
 
 ## Shop and orders
 
-`js/products.js` is the catalogue: add a dress by adding an object (name, price in GHS, lead time, photos). Shop photos are on a white background: put the original in `assets/source/products/` and run `python3 scripts/cutout_products.py <file>` (needs `pip install "rembg[cpu]"`) to get `assets/products/<file>.webp`. Leave `price` / `leadTime` as `null` and the card shows "Price on request" and no lead time.
+`js/products.js` is the catalogue: add a dress by adding an object (name, price in GHS, lead time, photos). Shop photos are on a white background: put the original in `assets/source/products/` and run `python3 scripts/cutout_products.py <file>` (needs `pip install "rembg[cpu]"`) to get `assets/products/<file>.webp`. If a photo is small or soft, first run `python3 scripts/enhance_photo.py assets/source/originals/<file> RealESRGAN_x4plus.pth` (AI 4x upscale with Real-ESRGAN, weights from github.com/xinntao/Real-ESRGAN releases), then cut out the result. Leave `price` / `leadTime` as `null` and the card shows "Price on request" and no lead time.
 
 "Get it tailored" (hero and cards) open the order sheet (`js/shop.js`): details, measurements (cm or in, with range checks), style photos (up to 5, shrunk on the phone before upload) and a review step. A half-finished form is kept in the browser.
 
