@@ -10,7 +10,7 @@
   justify-content: start;
 }
 .card { background: #fff; border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--line); }
-.card__media { position: relative; aspect-ratio: 496 / 800; background: #fff; touch-action: pan-y; cursor: ew-resize; }
+.card__media { position: relative; aspect-ratio: 496 / 800; background: #fff; touch-action: pan-y; cursor: pointer; }
 .card__media img { width: 100%; height: 100%; object-fit: contain; display: block; user-select: none; -webkit-user-drag: none; }
 .card__turn {
   position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
@@ -24,8 +24,10 @@
 .card__meta { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; color: var(--ink) !important; margin: 6px 0 10px !important; }
 .card__meta strong { font-weight: 500; font-size: 1.05rem; }
 .card__meta span { color: var(--muted); font-size: 0.85rem; }
-.card__actions { display: flex; flex-wrap: wrap; gap: 10px; }
-.card .btn { border: 0; cursor: pointer; font-family: inherit; padding: 14px 24px; }
+.card__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.card .btn { border: 0; cursor: pointer; font-family: inherit; padding: 11px 8px; font-size: 0.68rem; letter-spacing: 0.08em; white-space: nowrap; text-align: center; box-shadow: none; }
+.card__name { all: unset; cursor: pointer; }
+.card__name:focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; }
 .btn--ghost { background: transparent !important; color: var(--ink) !important; border: 1px solid var(--ink) !important; box-shadow: none !important; }
 .btn--ghost:hover { background: var(--ink) !important; color: #fff !important; }
 .btn:disabled { opacity: 0.6; cursor: progress; }

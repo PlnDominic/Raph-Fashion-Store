@@ -39,12 +39,12 @@
       const lead = p.leadTime ? `<span>Ready in ${p.leadTime}</span>` : '';
       return `
         <article class="card" data-id="${p.id}">
-          <div class="card__media" data-frames="${p.frames.join(',')}">
+          <div class="card__media" data-frames="${p.frames.join(',')}" data-view="${p.id}">
             <img src="${frameUrl(p.frames[0])}" alt="${p.name}, shown turning" loading="lazy" width="496" height="800">
             <span class="card__turn" aria-hidden="true">Drag to turn</span>
           </div>
           <div class="card__body">
-            <h3>${p.name}</h3>
+            <h3><button type="button" class="card__name" data-view="${p.id}">${p.name}</button></h3>
             <p class="card__meta"><strong>${price}</strong>${lead}</p>
             <div class="card__actions">
               ${p.readyMade ? `<button class="btn" type="button" data-add="${p.id}">Add to cart</button>` : ''}
@@ -78,8 +78,11 @@
         const i = Math.floor(t * frames.length);
         if (i !== last) { last = i; img.src = frameUrl(frames[i]); }
       };
+      let downX = null;
       media.addEventListener('pointermove', (e) => turn(e.clientX));
-      media.addEventListener('pointerdown', (e) => turn(e.clientX));
+      media.addEventListener('pointerdown', (e) => { downX = e.clientX; turn(e.clientX); });
+      // a tap opens the dress page; a drag only turns the dress
+      media.addEventListener('click', (e) => { if (downX != null && Math.abs(e.clientX - downX) > 8) e.stopPropagation(); downX = null; });
       media.addEventListener('pointerleave', () => { last = 0; img.src = frameUrl(frames[0]); });
       frames.forEach((n) => { new Image().src = frameUrl(n); });   // warm the cache
     });
@@ -335,7 +338,7 @@
   }
   function clearDraft() { try { localStorage.removeItem(DRAFT); } catch (e) { /* ignore */ } }
 
-  window.Raph = { money, ref, send, config, esc };
+  window.Raph = { money, ref, send, config, esc, compress };
 
   // ---------- wiring ----------
   buildMeasureFields();

@@ -120,9 +120,10 @@
     return false;
   };
 
-  function add(id) {
+  function add(id, size) {
     const line = cart.find((i) => i.id === id);
-    if (line) line.qty = Math.min(9, line.qty + 1); else cart.push({ id, qty: 1, size: '' });
+    if (line) { line.qty = Math.min(9, line.qty + 1); if (size) line.size = size; }
+    else cart.push({ id, qty: 1, size: size || '' });
     save();
     open('list');
   }
@@ -192,5 +193,6 @@
     if (view === 'checkout' && e.target.name) details[e.target.name] = e.target.value;
   });
 
+  window.RaphCart = { add };
   save();
 })();

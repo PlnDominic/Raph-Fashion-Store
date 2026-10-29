@@ -30,15 +30,27 @@ The hero expects a clip of the model on a plain white studio backdrop (generated
 
 "Get it tailored" (hero and cards) open the order sheet (`js/shop.js`): details, measurements (cm or in, with range checks), style photos (up to 5, shrunk on the phone before upload) and a review step. A half-finished form is kept in the browser.
 
-Each dress card has two buttons: **Add to cart** adds the ready-made dress to the cart (`js/cart.js`: choose a size, set the quantity, check out with name, phone and delivery address), and **Get it tailored** opens the made-to-measure sheet. A dress only gets the Order button if `readyMade: true` in `js/products.js`; sizes come from `RAPH_CONFIG.sizes`. The cart is kept in the browser.
+Each dress card has two buttons: **Add to cart** adds the ready-made dress to the cart (`js/cart.js`: choose a size, set the quantity, check out with name, phone and delivery address), and **Get it tailored** opens the made-to-measure sheet. A dress only gets the Add to cart button if `readyMade: true` in `js/products.js`; sizes come from `RAPH_CONFIG.sizes`. The cart is kept in the browser.
 
 **Orders are not delivered anywhere yet.** `RAPH_CONFIG.orderEndpoint` in `js/products.js` is `null`, so a placed order is only saved in that browser (`localStorage`, key `raph_orders`; cart orders have `type: "ready-made"`) and the confirmation screen says "Test mode". Set it to a URL that accepts a multipart POST (`order` = JSON, `photos` = the images) once the backend exists.
+
+## Dress page
+
+Tapping a dress photo or name in the shop opens its page (`js/pdp.js`): photo gallery (drag the big photo to turn the dress), UK size, **Add to cart**, **Get it tailored**, and a **Virtual fit** button. Thumbnails come from `gallery` in `js/products.js`.
+
+## Virtual fit
+
+`js/fit.js`. The customer adds a full-length photo of themselves (up to 3), picks a dress and taps **See it on me**; they can flip back to their original photo.
+
+The picture itself has to come from an AI try-on model, so it needs a small server endpoint: set `RAPH_CONFIG.tryOnEndpoint` to a URL that accepts a multipart POST with `person` (the photo), `garmentUrl` (full URL of the dress photo) and `productId`, calls a try-on model, and replies with `{ "image": "<url or data URL>" }`. **Until that is set, virtual fit is off**: everything up to "See it on me" works, then the screen says it isn't switched on yet, and photos never leave the device.
 
 ## Roadmap
 
 - [x] Scroll hero
 - [x] Shop grid and order sheet (details, measurements, style photos, review)
 - [x] Cart for ready-made dresses
+- [x] Dress page and Virtual Fit screen
+- [ ] Connect an AI try-on service for Virtual Fit
 - [ ] Real dress details: name, specs, price, lead time
 - [ ] More dresses in the collection
 - [ ] Order storage (database + photo storage) and a team view of incoming orders

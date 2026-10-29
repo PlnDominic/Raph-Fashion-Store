@@ -21,6 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/shop.css">
+  <link rel="stylesheet" href="css/pdp.css">
 </head>
 <body>
 
@@ -173,9 +174,79 @@
     <footer class="cart__foot" id="cartFoot"></footer>
   </dialog>
 
+  <dialog class="pdp" id="pdp" aria-labelledby="pdpName">
+    <button type="button" class="pdp__close" data-pdp-close aria-label="Close">&times;</button>
+    <div class="pdp__scroll">
+      <div class="pdp__grid">
+        <div class="pdp__gallery">
+          <div class="pdp__thumbs" id="pdpThumbs"></div>
+          <div class="pdp__main" id="pdpMain">
+            <img id="pdpImg" alt="" draggable="false">
+            <button type="button" class="pdp__fitbtn" id="pdpFitBtn" data-fit="">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7" r="3.2"/><path d="M5.5 20.5c.8-4 3.3-6.2 6.5-6.2s5.7 2.2 6.5 6.2"/></svg>
+              Virtual fit
+            </button>
+            <span class="pdp__hint" id="pdpHint">Drag to turn</span>
+          </div>
+        </div>
+        <div class="pdp__info">
+          <span class="pill">Handmade in Accra</span>
+          <h2 id="pdpName"></h2>
+          <p class="pdp__price" id="pdpPrice"></p>
+          <div class="pdp__sizes" id="pdpSizeBlock">
+            <p class="pdp__label">Size <span class="opt">(UK)</span>: <strong id="pdpSizeLabel">choose</strong></p>
+            <div class="chips" id="pdpSizes" role="group" aria-label="Size"></div>
+          </div>
+          <div class="pdp__actions">
+            <button type="button" class="btn" id="pdpAdd">Add to cart</button>
+            <button type="button" class="btn btn--ghost" id="pdpTailor" data-order="">Get it tailored</button>
+          </div>
+          <p class="err" id="pdpError" role="alert"></p>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="fit" id="fit" aria-labelledby="fitTitle">
+    <header class="fit__top">
+      <span></span>
+      <h3 id="fitTitle">Virtual Fit</h3>
+      <button type="button" class="order__close" id="fitClose" aria-label="Close">&times;</button>
+    </header>
+    <div class="fit__stage">
+      <div class="fit__col">
+        <p class="fit__label">You</p>
+        <div class="fit__list" id="fitPhotos"></div>
+        <label class="fit__add" aria-label="Add a photo of yourself">
+          <input type="file" accept="image/*" id="fitInput">
+          <span aria-hidden="true">+</span>
+        </label>
+      </div>
+      <div class="fit__view" id="fitView"></div>
+      <div class="fit__col">
+        <p class="fit__label">Dress</p>
+        <div class="fit__list" id="fitDresses"></div>
+      </div>
+    </div>
+    <div class="fit__controls" id="fitControls"></div>
+    <footer class="fit__bar">
+      <div class="fit__product">
+        <img id="fitProdImg" alt="">
+        <strong id="fitProdName"></strong>
+        <span id="fitProdPrice"></span>
+      </div>
+      <div class="fit__buttons">
+        <button type="button" class="btn btn--line" id="fitAdd">Add to cart</button>
+        <button type="button" class="btn" id="fitTailor" data-order="">Get it tailored</button>
+      </div>
+    </footer>
+  </dialog>
+
   <script src="js/products.js"></script>
   <script src="js/hero.js"></script>
   <script src="js/shop.js"></script>
   <script src="js/cart.js"></script>
+  <script src="js/pdp.js"></script>
+  <script src="js/fit.js"></script>
 </body>
 </html>
