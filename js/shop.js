@@ -47,8 +47,8 @@
             <h3>${p.name}</h3>
             <p class="card__meta"><strong>${price}</strong>${lead}</p>
             <div class="card__actions">
-              ${p.readyMade ? `<button class="btn" type="button" data-add="${p.id}">Order</button>` : ''}
-              <button class="btn ${p.readyMade ? 'btn--ghost' : ''}" type="button" data-order="${p.id}">Make this for me</button>
+              ${p.readyMade ? `<button class="btn" type="button" data-add="${p.id}">Add to cart</button>` : ''}
+              <button class="btn ${p.readyMade ? 'btn--ghost' : ''}" type="button" data-order="${p.id}">Made to measure</button>
             </div>
           </div>
         </article>`;

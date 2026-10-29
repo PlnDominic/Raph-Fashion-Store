@@ -28,9 +28,9 @@ The hero expects a clip of the model on a plain white studio backdrop (generated
 
 `js/products.js` is the catalogue: add a dress by adding an object (name, blurb, price in GHS, lead time, photos). Leave `price` / `leadTime` as `null` and the card shows "Price on request" and no lead time.
 
-"Make this for me" (hero) and every "Order" button open the order sheet (`js/shop.js`): details, measurements (cm or in, with range checks), style photos (up to 5, shrunk on the phone before upload) and a review step. A half-finished form is kept in the browser.
+"Made to measure" (hero and cards) open the order sheet (`js/shop.js`): details, measurements (cm or in, with range checks), style photos (up to 5, shrunk on the phone before upload) and a review step. A half-finished form is kept in the browser.
 
-Each dress card has two buttons: **Order** adds the ready-made dress to the cart (`js/cart.js`: choose a size, set the quantity, check out with name, phone and delivery address), and **Make this for me** opens the made-to-measure sheet. A dress only gets the Order button if `readyMade: true` in `js/products.js`; sizes come from `RAPH_CONFIG.sizes`. The cart is kept in the browser.
+Each dress card has two buttons: **Add to cart** adds the ready-made dress to the cart (`js/cart.js`: choose a size, set the quantity, check out with name, phone and delivery address), and **Made to measure** opens the made-to-measure sheet. A dress only gets the Order button if `readyMade: true` in `js/products.js`; sizes come from `RAPH_CONFIG.sizes`. The cart is kept in the browser.
 
 **Orders are not delivered anywhere yet.** `RAPH_CONFIG.orderEndpoint` in `js/products.js` is `null`, so a placed order is only saved in that browser (`localStorage`, key `raph_orders`; cart orders have `type: "ready-made"`) and the confirmation screen says "Test mode". Set it to a URL that accepts a multipart POST (`order` = JSON, `photos` = the images) once the backend exists.
 

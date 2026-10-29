@@ -2,7 +2,7 @@
 //
 //   id        short, unique, lowercase with dashes
 //   name      shown on the card and in the order
-//   readyMade true if a finished dress can be bought straight away (adds an "Order" / add-to-cart button)
+//   readyMade true if a finished dress can be bought straight away (adds an "Add to cart" button)
 //   price     number in GHS, or null to show "Price on request"
 //   leadTime  e.g. "3 to 4 weeks", or null to hide it
 //   frames    which hero frames (1-128) to use as the card photos; scroll/drag over the card to turn the dress
