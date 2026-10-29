@@ -19,6 +19,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 a { color: inherit; }
+:focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; border-radius: 4px; }
 
 /* ---------- top bar ---------- */
 .topbar {
@@ -45,6 +46,7 @@ a { color: inherit; }
   height: 100vh; height: 100svh;
   overflow: hidden; background: var(--paper);
 }
+.hero__still { position: absolute; inset: 0; margin: auto; height: 100%; width: auto; max-width: 100%; object-fit: contain; }
 .hero__dress { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
 /* text beats, faded by JS via --o (opacity) and --y (offset) */

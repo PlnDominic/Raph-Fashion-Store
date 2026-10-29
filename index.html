@@ -6,6 +6,16 @@
   <title>Raph Fashion Store</title>
   <meta name="description" content="Made-to-measure gowns, sewn for you. Choose a design, send your measurements, and we stitch it to fit.">
   <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <!-- og:image / twitter:image need the full URL (https://your-domain/assets/share.jpg) once the domain is live -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Raph Fashion Store">
+  <meta property="og:description" content="Made-to-measure gowns, sewn for you.">
+  <meta property="og:image" content="assets/share.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preload" as="image" href="assets/hero-frames/0001.webp" type="image/webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
@@ -24,6 +34,7 @@
     <section class="hero" id="hero" data-frames="128" data-path="assets/hero-frames/" data-ext="webp">
       <div class="hero__stage">
         <canvas class="hero__dress" role="img" aria-label="A model turning in an orange beaded mermaid gown with a kente-print train"></canvas>
+        <noscript><img class="hero__still" src="assets/hero-frames/0001.webp" alt="A model in an orange beaded mermaid gown with a kente-print train"></noscript>
 
         <div class="beat beat--intro" data-from="0" data-to="0.28">
           <p class="eyebrow">Made to measure &middot; Ghana</p>

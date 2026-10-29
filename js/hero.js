@@ -89,8 +89,16 @@
   }
 
   function load() {
-    // first frame first so the hero is never empty, then the rest in order
-    const order = [0, ...Array.from({ length: total - 1 }, (_, i) => i + 1)];
+    // coarse to fine: every 16th frame first, then 8th, 4th, 2nd, and the rest, so
+    // scrolling already works after a fraction of the download
+    const order = [];
+    const seen = new Set();
+    for (const step of [16, 8, 4, 2, 1]) {
+      for (let i = 0; i < total; i += step) {
+        if (!seen.has(i)) { seen.add(i); order.push(i); }
+      }
+      if (!seen.has(total - 1) && step === 16) { seen.add(total - 1); order.push(total - 1); }
+    }
     for (const i of order) {
       const img = new Image();
       img.decoding = 'async';
@@ -98,6 +106,7 @@
         loaded++;
         hero.style.setProperty('--l', (loaded / total).toFixed(3));
         if (i === 0) resize();
+        else if (i === drawnIndex || drawnIndex < 0) draw(true);
         if (loaded === total) hero.classList.add('is-loaded');
       };
       img.src = path + pad(i + 1) + '.' + ext;
