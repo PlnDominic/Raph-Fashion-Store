@@ -41,6 +41,9 @@ button.btn { font-family: inherit; cursor: pointer; border: 0; }
 .footer__contact span { display: block; font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
 .footer__contact a { color: var(--ember); font-weight: 500; text-decoration: none; }
 .footer__contact a:hover { text-decoration: underline; }
+.footer__social { display: flex; justify-content: center; align-items: center; }
+.footer__social a { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); color: var(--ember); transition: background 0.2s, color 0.2s; }
+.footer__social a:hover { background: var(--ember); color: #fff; text-decoration: none; }
 @media (min-width: 820px) { .footer__contact { grid-template-columns: repeat(4, 1fr); } }
 .footer__credit { font-size: 0.78rem; }
 .footer__credit a { color: var(--ink); text-decoration: none; font-weight: 500; }
