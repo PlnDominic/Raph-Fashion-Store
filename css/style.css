@@ -61,7 +61,6 @@ h1 em, h2 em { font-style: italic; color: var(--ember); }
 .lede { color: var(--muted); max-width: 30ch; margin: 18px 0 0; font-size: 1rem; }
 
 .specs { margin: 0; display: grid; gap: 14px; }
-.specs div { border-left: 2px solid var(--glow); padding-left: 14px; }
 .specs dt { font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
 .specs dd { margin: 2px 0 0; font-family: var(--serif); font-size: 1.35rem; font-weight: 500; }
 
