@@ -55,8 +55,9 @@ window.RAPH_CONFIG = {
   // sizes offered when buying a ready-made dress
   sizes: ['UK 8', 'UK 10', 'UK 12', 'UK 14', 'UK 16', 'UK 18'],
   // Where finished orders are sent: the Supabase Edge Function URL, e.g.
-  //   https://YOUR-PROJECT-REF.supabase.co/functions/v1/place-order
-  // (see supabase/README.md). While this is null, orders are only saved in the browser they were made
+  //   https://<project-ref>.supabase.co/functions/v1/<function-slug>
+  // (the slug in the address is the one on the function's Overview tab; it can differ from the name
+  // in the dashboard heading). See supabase/README.md. While this is null, orders are only saved in the browser they were made
   // in, and the confirmation screen says so.
-  orderEndpoint: null,
+  orderEndpoint: 'https://ploapqarddqvqooxkiut.supabase.co/functions/v1/clever-processor',
 };

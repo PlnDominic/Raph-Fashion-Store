@@ -29,10 +29,10 @@ Easiest, no tools to install:
 Or with the Supabase CLI: `supabase login`, `supabase link --project-ref <ref>`, `supabase functions deploy place-order --no-verify-jwt`.
 
 ### 4. Connect the site
-Your function URL is `https://<project-ref>.supabase.co/functions/v1/place-order` (the project ref is in **Project Settings → General**). Put it in `js/products.js`:
+Your function URL is `https://<project-ref>.supabase.co/functions/v1/<function-slug>` (the project ref is in **Project Settings → General**; the slug is shown on the function's **Overview** tab and can differ from the name in the dashboard heading, so copy it from there). Put it in `js/products.js`:
 
 ```js
-orderEndpoint: 'https://<project-ref>.supabase.co/functions/v1/place-order',
+orderEndpoint: 'https://<project-ref>.supabase.co/functions/v1/<function-slug>',
 ```
 
 Commit and publish the site. From then on the "Test mode" notice disappears and orders appear in the database.
