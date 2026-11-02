@@ -134,8 +134,6 @@ const LABELS: Record<string, string> = {
   height: 'Height', bust: 'Bust', underbust: 'Underbust', waist: 'Waist', hips: 'Hips',
   shoulder: 'Shoulder width', shoulderWaist: 'Shoulder to waist', dressLength: 'Dress length', upperArm: 'Upper arm',
 };
-const GREEN = '#0c3925';
-const GOLD = '#c7880f';
 
 const esc = (v: unknown) =>
   String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
@@ -151,14 +149,33 @@ function waNumber(phone: string) {
   return d;
 }
 
+// Email look: a plain white letter, left-aligned, one serif headline, one green button, hairline rules.
+const INK = '#1b1b1a';
+const MUTED = '#6e6a62';
+const RULE = '#e7e3db';
+const GREEN = '#0c3925';
+const SERIF = "Georgia, 'Times New Roman', serif";
+const SANS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+const LOGO_URL = 'https://www.mavecollections.com/assets/brand/mave-logo.png';
+
+const whenAccra = (d: Date) =>
+  new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Accra', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(d);
+const dayOnly = (ymd: string) =>
+  new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(ymd + 'T12:00:00Z'));
+
 function buildEmail(reference: string, o: ReturnType<typeof validate>, photos: string[]) {
   const kind = KINDS[o.kind];
-  const first = String(o.items[0].product_name) + (o.items.length > 1 ? ` +${o.items.length - 1} more` : '');
-  const subject = oneLine(`New order ${reference} · ${kind} · ${first} · ${o.customer_name}`).slice(0, 200);
-  const total = ghs(o.total) ?? 'To be confirmed';
-  const wa = `https://wa.me/${waNumber(o.customer_phone)}?text=${encodeURIComponent(`Hello ${o.customer_name.split(' ')[0]}, this is Mave Collection about your order ${reference}.`)}`;
+  const first = String(o.items[0].product_name);
+  const more = o.items.length > 1 ? ` and ${o.items.length - 1} more` : '';
+  const total = ghs(o.total);
+  const firstName = o.customer_name.trim().split(/\s+/)[0];
+  const phoneDial = o.customer_phone.replace(/[^\d+]/g, '');
+  const wa = `https://wa.me/${waNumber(o.customer_phone)}?text=${encodeURIComponent(`Hello ${firstName}, this is Mave Collection about your order ${reference}.`)}`;
+  const received = whenAccra(new Date());
+  const needBy = o.need_by ? dayOnly(o.need_by) : null;
   const items = o.items.map((i) => ({
-    line: `${i.qty} x ${i.product_name}${i.size ? ` (${i.size})` : ''}`,
+    name: String(i.product_name),
+    detail: [i.size ? `Size ${i.size}` : '', Number(i.qty) > 1 ? `Qty ${i.qty}` : ''].filter(Boolean).join(' · '),
     price: ghs(i.unit_price_ghs as number | null),
   }));
   const meas = o.measurements_cm
@@ -166,50 +183,108 @@ function buildEmail(reference: string, o: ReturnType<typeof validate>, photos: s
     : [];
   const links = photos.map(safeUrl).filter((u): u is string => !!u);
 
+  const subject = oneLine(`New order from ${o.customer_name}: ${first}${more} · ${total ?? 'price to confirm'} (${reference})`).slice(0, 200);
+  const preheader = oneLine(`${first}${more} · ${total ?? 'price to confirm'} · ${o.delivery_address}`).slice(0, 110);
+
+  // ---- plain text (shown by text-only mail apps and used for search) ----
   const text = [
-    `NEW ORDER ${reference}`,
-    `${kind}  |  Total: ${total}`,
+    `New order ${reference}`,
+    `${kind} · ${total ?? 'price to confirm'} · received ${received}`,
     '',
-    'CUSTOMER',
     o.customer_name,
-    `Phone / WhatsApp: ${o.customer_phone}   (${wa})`,
+    `Phone: ${o.customer_phone}`,
+    `WhatsApp: ${wa}`,
     `Deliver to: ${o.delivery_address}`,
-    o.need_by ? `Needed by: ${o.need_by}` : '',
+    needBy ? `Needed by: ${needBy}` : '',
     '',
-    'ORDER',
-    ...items.map((i) => `- ${i.line}${i.price ? `  ${i.price}` : ''}`),
-    o.notes ? `\nNOTES\n${o.notes}` : '',
-    meas.length ? '\nMEASUREMENTS\n' + meas.map((m) => `- ${m.label}: ${m.cm} cm (${m.inch} in)`).join('\n') : '',
-    links.length ? '\nSTYLE PHOTOS (links work for 7 days)\n' + links.map((u, n) => `${n + 1}. ${u}`).join('\n') : '',
+    'What they ordered',
+    ...items.map((i) => `  ${i.name}${i.detail ? ` (${i.detail})` : ''}${i.price ? ` - ${i.price}` : ''}`),
+    `  Total: ${total ?? 'to be confirmed'}`,
+    o.notes ? `\nTheir note\n  ${o.notes}` : '',
+    meas.length ? '\nMeasurements\n' + meas.map((m) => `  ${m.label}: ${m.cm} cm (${m.inch} in)`).join('\n') : '',
+    links.length ? '\nStyle photos (links work for 7 days)\n' + links.map((u, n) => `  ${n + 1}. ${u}`).join('\n') : '',
     '',
-    'Update the status in Supabase > Table Editor > orders.',
+    'Mave Collection, Danfa, Accra',
+    "To change this order's status: Supabase, Table Editor, orders.",
   ].filter((l) => l !== '').join('\n');
 
-  const row = (a: string, b: string) =>
-    `<tr><td style="padding:6px 0;color:#6b5a4e;width:42%">${a}</td><td style="padding:6px 0;text-align:right;font-weight:500">${b}</td></tr>`;
-  const section = (title: string, inner: string) =>
-    `<h3 style="margin:26px 0 8px;font:600 11px Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:${GREEN}">${title}</h3>${inner}`;
-  const html = `<!doctype html><html><body style="margin:0;background:#f4f1ec;padding:16px;font:15px/1.5 Arial,Helvetica,sans-serif;color:#1f120b">
-<div style="max-width:560px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden">
-  <div style="background:${GREEN};color:#fff;padding:22px 24px">
-    <div style="font:11px Arial;letter-spacing:.22em;text-transform:uppercase;color:#e8c36a">Mave Collection &middot; New order</div>
-    <div style="font:600 26px Georgia,serif;margin-top:6px">${esc(reference)}</div>
-    <div style="margin-top:6px;opacity:.9">${esc(kind)} &middot; ${esc(total)}</div>
-  </div>
-  <div style="padding:6px 24px 24px">
-    ${section('Customer', `<div style="font-weight:600;font-size:17px">${esc(o.customer_name)}</div>
-      <div style="margin-top:4px"><a href="tel:${esc(o.customer_phone.replace(/[^\d+]/g, ''))}" style="color:${GREEN}">${esc(o.customer_phone)}</a>
-        &nbsp;&middot;&nbsp; <a href="${esc(wa)}" style="color:${GREEN};font-weight:600">Message on WhatsApp</a></div>
-      <div style="margin-top:4px">${esc(o.delivery_address)}</div>
-      ${o.need_by ? `<div style="margin-top:4px;color:#6b5a4e">Needed by <b style="color:#1f120b">${esc(o.need_by)}</b></div>` : ''}`)}
-    ${section('Order', `<table style="width:100%;border-collapse:collapse">${items.map((i) => row(esc(i.line), esc(i.price ?? '—'))).join('')}
-      <tr><td colspan="2" style="border-top:1px solid #e6e1da;padding-top:8px;text-align:right"><b>Total ${esc(total)}</b></td></tr></table>`)}
-    ${o.notes ? section('Notes', `<div style="white-space:pre-wrap">${esc(o.notes)}</div>`) : ''}
-    ${meas.length ? section('Measurements', `<table style="width:100%;border-collapse:collapse">${meas.map((m) => row(esc(m.label), `${m.cm} cm <span style="color:#6b5a4e;font-weight:400">(${m.inch} in)</span>`)).join('')}</table>`) : ''}
-    ${links.length ? section('Style photos <span style="text-transform:none;letter-spacing:0;color:#6b5a4e">(links work for 7 days)</span>', links.map((u, n) => `<div style="margin:4px 0"><a href="${esc(u)}" style="color:${GOLD};font-weight:600">Photo ${n + 1}</a></div>`).join('')) : ''}
-    <p style="margin:28px 0 0;color:#6b5a4e;font-size:13px">Change the status in Supabase &rarr; Table Editor &rarr; <b>orders</b>.</p>
-  </div>
-</div></body></html>`;
+  // ---- html ----
+  const h2 = (t: string) => `<h2 style="margin:0 0 12px;font:400 19px/1.3 ${SERIF};color:${INK}">${t}</h2>`;
+  const block = (inner: string) => `<tr><td class="px" style="padding:30px 32px 0">${inner}</td></tr>`;
+  const rule = `<tr><td class="px" style="padding:30px 32px 0"><div style="border-top:1px solid ${RULE};font-size:0;line-height:0">&nbsp;</div></td></tr>`;
+  const line = (label: string, value: string, last = false) =>
+    `<tr><td style="padding:9px 0;${last ? '' : `border-bottom:1px solid ${RULE};`}font:14px/1.4 ${SANS};color:${MUTED}">${label}</td>
+     <td align="right" style="padding:9px 0;${last ? '' : `border-bottom:1px solid ${RULE};`}font:15px/1.4 ${SANS};color:${INK}">${value}</td></tr>`;
+
+  const orderRows = items.map((i) =>
+    `<tr><td style="padding:12px 0;border-bottom:1px solid ${RULE};font:15px/1.45 ${SANS};color:${INK}">
+        <div style="font-weight:600">${esc(i.name)}</div>${i.detail ? `<div style="font-size:14px;color:${MUTED}">${esc(i.detail)}</div>` : ''}</td>
+      <td align="right" valign="top" style="padding:12px 0;border-bottom:1px solid ${RULE};font:15px/1.45 ${SANS};color:${INK};white-space:nowrap">${esc(i.price ?? 'Price to confirm')}</td></tr>`).join('');
+
+  const photoCells = links.map((u, n) =>
+    `<td width="50%" valign="top" style="padding:0 ${n % 2 === 0 ? '6px' : '0'} 12px ${n % 2 === 0 ? '0' : '6px'}">
+       <a href="${esc(u)}"><img src="${esc(u)}" width="250" alt="Style photo ${n + 1}" style="display:block;width:100%;height:auto;border:0;border-radius:4px"></a></td>`);
+  const photoRows: string[] = [];
+  for (let n = 0; n < photoCells.length; n += 2) photoRows.push(`<tr>${photoCells[n]}${photoCells[n + 1] ?? '<td width="50%"></td>'}</tr>`);
+
+  const html = `<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only">
+<title>${esc(subject)}</title>
+<style>
+  a { color: ${GREEN}; }
+  @media (max-width: 620px) { .px { padding-left: 20px !important; padding-right: 20px !important; } .ref { font-size: 28px !important; } .call { display: block !important; margin: 14px 0 0 0 !important; } }
+</style></head>
+<body style="margin:0;padding:0;background:#ffffff;-webkit-text-size-adjust:100%">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;font-size:1px;line-height:1px;color:#ffffff">${esc(preheader)}${'&nbsp;&zwnj;'.repeat(40)}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff"><tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;text-align:left">
+
+  <tr><td class="px" style="padding:28px 32px 0">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td valign="middle"><img src="${LOGO_URL}" width="34" height="34" alt="" style="display:block;border:0"></td>
+      <td valign="middle" style="padding-left:10px;font:600 17px/1 ${SERIF};color:${GREEN}">Mave Collection</td>
+    </tr></table>
+  </td></tr>
+
+  ${block(`<div style="font:14px/1.4 ${SANS};color:${MUTED}">New order &middot; ${esc(received)}</div>
+    <h1 class="ref" style="margin:6px 0 4px;font:400 34px/1.15 ${SERIF};color:${INK};letter-spacing:.01em">${esc(reference)}</h1>
+    <div style="font:16px/1.5 ${SANS};color:${INK}">${esc(kind)}${total ? ` &middot; <b>${esc(total)}</b>` : ' &middot; price to confirm'}</div>`)}
+
+  ${block(`<div style="font:400 24px/1.25 ${SERIF};color:${INK}">${esc(o.customer_name)}</div>
+    <div style="margin-top:6px;font:15px/1.6 ${SANS};color:${INK}">${esc(o.delivery_address)}</div>
+    ${needBy ? `<div style="margin-top:2px;font:15px/1.6 ${SANS};color:${INK}">Needed by <b>${esc(needBy)}</b></div>` : ''}
+    <div style="margin-top:16px">
+      <a href="${esc(wa)}" style="display:inline-block;background:${GREEN};color:#ffffff;text-decoration:none;font:600 15px/1 ${SANS};padding:13px 20px;border-radius:6px">Message ${esc(firstName)} on WhatsApp</a>
+      <a class="call" href="tel:${esc(phoneDial)}" style="display:inline-block;margin:6px 0 0 14px;font:15px/1.2 ${SANS};color:${GREEN}">or call ${esc(o.customer_phone)}</a>
+    </div>`)}
+
+  ${rule}
+  ${block(`${h2('What they ordered')}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${orderRows}
+      <tr><td style="padding:14px 0 0;font:14px/1.4 ${SANS};color:${MUTED}">Total</td>
+          <td align="right" style="padding:14px 0 0;font:600 18px/1.3 ${SANS};color:${INK}">${esc(total ?? 'To be confirmed')}</td></tr>
+    </table>`)}
+
+  ${o.notes ? block(`${h2('Their note')}<div style="font:15px/1.6 ${SANS};color:${INK};white-space:pre-wrap">${esc(o.notes)}</div>`) : ''}
+
+  ${meas.length ? block(`${h2('Measurements')}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${meas.map((m, n) => line(esc(m.label), `${m.cm} cm <span style="color:${MUTED}">&nbsp;${m.inch} in</span>`, n === meas.length - 1)).join('')}</table>`) : ''}
+
+  ${links.length ? block(`${h2('Style photos')}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${photoRows.join('')}</table>
+    <div style="font:13px/1.4 ${SANS};color:${MUTED}">Tap a photo to open it full size. The links work for 7 days.</div>`) : ''}
+
+  <tr><td class="px" style="padding:36px 32px 36px">
+    <div style="border-top:1px solid ${RULE};padding-top:16px;font:13px/1.6 ${SANS};color:${MUTED}">
+      Mave Collection &middot; Danfa, Accra<br>
+      To change this order's status, open Supabase, then Table Editor, then the orders table.
+    </div>
+  </td></tr>
+
+</table></td></tr></table>
+</body></html>`;
   return { subject, text, html };
 }
 
