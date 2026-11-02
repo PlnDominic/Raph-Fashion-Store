@@ -6,7 +6,15 @@
 //
 // Deployed with verify_jwt = false because it is a public order form; every field is validated here and
 // the database is only ever written with the service role, which Supabase injects into the function.
-// Optional secret: ALLOWED_ORIGIN (e.g. https://mavecollection.com) to accept orders from that site only.
+// Secrets (Edge Functions -> Secrets):
+//   RESEND_API_KEY  API key from resend.com; together with NOTIFY_TO it switches the new-order email on
+//   NOTIFY_TO       who gets the email; comma separated. While you use Resend's shared test sender this must
+//                   be the address you signed up to Resend with.
+//   NOTIFY_FROM     optional sender, e.g. "Mave Collection <orders@mavecollections.com>" once that domain is
+//                   verified in Resend. Default: "Mave Collection Orders <onboarding@resend.dev>"
+//   ALLOWED_ORIGIN  optional, e.g. https://www.mavecollections.com, to accept orders from that site only
+// An email problem never fails an order: the outcome is written to orders.notified_at / orders.notify_error
+// (see supabase/migrations/20261103000000_order_notifications.sql).
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const MAX_PHOTOS = 5;
@@ -120,6 +128,161 @@ function validate(o: any) {
   return { kind, customer_name, customer_phone, delivery_address, need_by, notes, items, measurements_cm, total };
 }
 
+// ---------- the new-order email (sent with Resend's HTTPS API) ----------
+const KINDS: Record<string, string> = { 'ready-made': 'Ready-made', 'made-to-measure': 'Made to measure', 'custom': 'Custom design' };
+const LABELS: Record<string, string> = {
+  height: 'Height', bust: 'Bust', underbust: 'Underbust', waist: 'Waist', hips: 'Hips',
+  shoulder: 'Shoulder width', shoulderWaist: 'Shoulder to waist', dressLength: 'Dress length', upperArm: 'Upper arm',
+};
+const GREEN = '#0c3925';
+const GOLD = '#c7880f';
+
+const esc = (v: unknown) =>
+  String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+const oneLine = (v: unknown) => String(v ?? '').replace(/[\r\n\0\x0b\x0c\x85]+|\u2028|\u2029/g, ' ').trim();
+const ghs = (n: number | null) => (n == null ? null : 'GHS ' + n.toLocaleString('en-GH', { maximumFractionDigits: 2 }));
+const safeUrl = (u: string) => { try { const x = new URL(u); return x.protocol === 'https:' || x.protocol === 'http:' ? x.href : null; } catch { return null; } };
+
+// Ghana numbers: 0541791986 -> 233541791986 for wa.me; anything else keeps its digits
+function waNumber(phone: string) {
+  const d = phone.replace(/\D/g, '');
+  if (d.startsWith('233')) return d;
+  if (d.startsWith('0') && d.length === 10) return '233' + d.slice(1);
+  return d;
+}
+
+function buildEmail(reference: string, o: ReturnType<typeof validate>, photos: string[]) {
+  const kind = KINDS[o.kind];
+  const first = String(o.items[0].product_name) + (o.items.length > 1 ? ` +${o.items.length - 1} more` : '');
+  const subject = oneLine(`New order ${reference} · ${kind} · ${first} · ${o.customer_name}`).slice(0, 200);
+  const total = ghs(o.total) ?? 'To be confirmed';
+  const wa = `https://wa.me/${waNumber(o.customer_phone)}?text=${encodeURIComponent(`Hello ${o.customer_name.split(' ')[0]}, this is Mave Collection about your order ${reference}.`)}`;
+  const items = o.items.map((i) => ({
+    line: `${i.qty} x ${i.product_name}${i.size ? ` (${i.size})` : ''}`,
+    price: ghs(i.unit_price_ghs as number | null),
+  }));
+  const meas = o.measurements_cm
+    ? Object.entries(o.measurements_cm).map(([k, v]) => ({ label: LABELS[k] ?? k, cm: v, inch: Math.round((v / 2.54) * 10) / 10 }))
+    : [];
+  const links = photos.map(safeUrl).filter((u): u is string => !!u);
+
+  const text = [
+    `NEW ORDER ${reference}`,
+    `${kind}  |  Total: ${total}`,
+    '',
+    'CUSTOMER',
+    o.customer_name,
+    `Phone / WhatsApp: ${o.customer_phone}   (${wa})`,
+    `Deliver to: ${o.delivery_address}`,
+    o.need_by ? `Needed by: ${o.need_by}` : '',
+    '',
+    'ORDER',
+    ...items.map((i) => `- ${i.line}${i.price ? `  ${i.price}` : ''}`),
+    o.notes ? `\nNOTES\n${o.notes}` : '',
+    meas.length ? '\nMEASUREMENTS\n' + meas.map((m) => `- ${m.label}: ${m.cm} cm (${m.inch} in)`).join('\n') : '',
+    links.length ? '\nSTYLE PHOTOS (links work for 7 days)\n' + links.map((u, n) => `${n + 1}. ${u}`).join('\n') : '',
+    '',
+    'Update the status in Supabase > Table Editor > orders.',
+  ].filter((l) => l !== '').join('\n');
+
+  const row = (a: string, b: string) =>
+    `<tr><td style="padding:6px 0;color:#6b5a4e;width:42%">${a}</td><td style="padding:6px 0;text-align:right;font-weight:500">${b}</td></tr>`;
+  const section = (title: string, inner: string) =>
+    `<h3 style="margin:26px 0 8px;font:600 11px Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:${GREEN}">${title}</h3>${inner}`;
+  const html = `<!doctype html><html><body style="margin:0;background:#f4f1ec;padding:16px;font:15px/1.5 Arial,Helvetica,sans-serif;color:#1f120b">
+<div style="max-width:560px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden">
+  <div style="background:${GREEN};color:#fff;padding:22px 24px">
+    <div style="font:11px Arial;letter-spacing:.22em;text-transform:uppercase;color:#e8c36a">Mave Collection &middot; New order</div>
+    <div style="font:600 26px Georgia,serif;margin-top:6px">${esc(reference)}</div>
+    <div style="margin-top:6px;opacity:.9">${esc(kind)} &middot; ${esc(total)}</div>
+  </div>
+  <div style="padding:6px 24px 24px">
+    ${section('Customer', `<div style="font-weight:600;font-size:17px">${esc(o.customer_name)}</div>
+      <div style="margin-top:4px"><a href="tel:${esc(o.customer_phone.replace(/[^\d+]/g, ''))}" style="color:${GREEN}">${esc(o.customer_phone)}</a>
+        &nbsp;&middot;&nbsp; <a href="${esc(wa)}" style="color:${GREEN};font-weight:600">Message on WhatsApp</a></div>
+      <div style="margin-top:4px">${esc(o.delivery_address)}</div>
+      ${o.need_by ? `<div style="margin-top:4px;color:#6b5a4e">Needed by <b style="color:#1f120b">${esc(o.need_by)}</b></div>` : ''}`)}
+    ${section('Order', `<table style="width:100%;border-collapse:collapse">${items.map((i) => row(esc(i.line), esc(i.price ?? '—'))).join('')}
+      <tr><td colspan="2" style="border-top:1px solid #e6e1da;padding-top:8px;text-align:right"><b>Total ${esc(total)}</b></td></tr></table>`)}
+    ${o.notes ? section('Notes', `<div style="white-space:pre-wrap">${esc(o.notes)}</div>`) : ''}
+    ${meas.length ? section('Measurements', `<table style="width:100%;border-collapse:collapse">${meas.map((m) => row(esc(m.label), `${m.cm} cm <span style="color:#6b5a4e;font-weight:400">(${m.inch} in)</span>`)).join('')}</table>`) : ''}
+    ${links.length ? section('Style photos <span style="text-transform:none;letter-spacing:0;color:#6b5a4e">(links work for 7 days)</span>', links.map((u, n) => `<div style="margin:4px 0"><a href="${esc(u)}" style="color:${GOLD};font-weight:600">Photo ${n + 1}</a></div>`).join('')) : ''}
+    <p style="margin:28px 0 0;color:#6b5a4e;font-size:13px">Change the status in Supabase &rarr; Table Editor &rarr; <b>orders</b>.</p>
+  </div>
+</div></body></html>`;
+  return { subject, text, html };
+}
+
+// Sends the email with Resend (https://resend.com/docs/api-reference/emails/send-email).
+// The idempotency key is the order reference, so a retry can never send the same order twice.
+async function sendWithResend(apiKey: string, payload: Record<string, unknown>, reference: string): Promise<string | null> {
+  const endpoint = Deno.env.get('RESEND_API_URL') ?? 'https://api.resend.com/emails';
+  let lastError = 'unknown error';
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'Idempotency-Key': `order-${reference}`,
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (res.ok) return null;
+      const detail = await res.json().catch(() => null);
+      lastError = `Resend answered ${res.status}${detail?.message ? `: ${String(detail.message).slice(0, 160)}` : ''}`;
+      if (res.status < 500 && res.status !== 429) return lastError;        // a mistake on our side: retrying won't help
+    } catch (e) {
+      lastError = `Resend unreachable: ${e instanceof Error ? e.message : String(e)}`;
+    }
+    if (attempt === 1) await new Promise((r) => setTimeout(r, 1500));
+  }
+  return lastError;
+}
+
+// Emails the team about a saved order. Best effort: it never changes what the customer sees.
+async function notifyTeam(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  id: string,
+  reference: string,
+  order: ReturnType<typeof validate>,
+  paths: string[],
+) {
+  const apiKey = Deno.env.get('RESEND_API_KEY');
+  const to = (Deno.env.get('NOTIFY_TO') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  if (!apiKey || to.length === 0) return;
+
+  let error: string | null = null;
+  try {
+    // style photos live in a private bucket, so give the team links that work for 7 days
+    let photos: string[] = [];
+    if (paths.length) {
+      const { data } = await supabase.storage.from('order-photos').createSignedUrls(paths, 7 * 24 * 3600);
+      photos = ((data ?? []) as Array<{ signedUrl?: string }>).map((d) => d.signedUrl).filter((u): u is string => !!u);
+    }
+    const mail = buildEmail(reference, order, photos);
+    error = await sendWithResend(apiKey, {
+      from: Deno.env.get('NOTIFY_FROM') ?? 'Mave Collection Orders <onboarding@resend.dev>',
+      to,
+      subject: mail.subject,
+      html: mail.html,
+      text: mail.text,
+    }, reference);
+  } catch (e) {
+    error = `notification failed: ${e instanceof Error ? e.message : String(e)}`;
+  }
+
+  if (error) console.error('notifyTeam', reference, error);          // never log the API key
+  const { error: updateError } = await supabase
+    .from('orders')
+    .update(error ? { notify_error: error.slice(0, 300) } : { notified_at: new Date().toISOString(), notify_error: null })
+    .eq('id', id);
+  if (updateError) console.error('could not record the notification result', updateError.message);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -196,6 +359,12 @@ Deno.serve(async (req: Request) => {
     if (paths.length) await supabase.storage.from('order-photos').remove(paths);
     return json({ error: 'Something went wrong. Please try again.' }, 500);
   }
+
+  // email the team in the background: the customer's confirmation never waits for it
+  const task = notifyTeam(supabase, id, reference as string, order, paths).catch((e) => console.error('notifyTeam crashed', e));
+  // deno-lint-ignore no-explicit-any
+  const runtime = (globalThis as any).EdgeRuntime;
+  if (runtime?.waitUntil) runtime.waitUntil(task); else await task;
 
   return json({ reference });
 });

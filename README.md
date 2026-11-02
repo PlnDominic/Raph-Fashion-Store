@@ -56,4 +56,4 @@ The live address is https://www.mavecollections.com/ . It is used for the link-p
 - [x] Order storage code (Supabase tables, storage, order function), tested locally
 - [ ] Create the Supabase project and connect it (see `supabase/README.md`)
 - [ ] Paystack checkout (mobile money + card)
-- [ ] Order emails (on hold)
+- [x] Order emails to the team via Resend (code ready; needs the setup in `supabase/README.md`, step 6)
