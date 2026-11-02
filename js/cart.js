@@ -156,7 +156,7 @@
     };
     const btn = foot.querySelector('[data-place]');
     btn.disabled = true; btn.textContent = 'Sending…';
-    try { await R.send(order, []); }
+    try { const reply = await R.send(order, []); if (reply && reply.reference) order.reference = reply.reference; }
     catch (e) { btn.disabled = false; btn.textContent = 'Place order'; return setError('Could not send. Check your connection and try again.'); }
     doneInfo = { ref: order.reference, msg: `Thank you, ${order.customer.name.split(' ')[0]}. We'll call you on ${order.customer.phone} to confirm.` };
     cart = []; save();

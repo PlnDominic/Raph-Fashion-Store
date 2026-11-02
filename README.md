@@ -34,7 +34,7 @@ The hero expects a clip of the model on a plain white studio backdrop (generated
 
 Each dress card has two buttons: **Add to cart** adds the ready-made dress to the cart (`js/cart.js`: choose a size, set the quantity, check out with name, phone and delivery address), and **Get it tailored** opens the made-to-measure sheet. A dress only gets the Add to cart button if `readyMade: true` in `js/products.js`; sizes come from `RAPH_CONFIG.sizes`. The cart is kept in the browser.
 
-**Orders are not delivered anywhere yet.** `RAPH_CONFIG.orderEndpoint` in `js/products.js` is `null`, so a placed order is only saved in that browser (`localStorage`, key `raph_orders`; cart orders have `type: "ready-made"`) and the confirmation screen says "Test mode". Set it to a URL that accepts a multipart POST (`order` = JSON, `photos` = the images) once the backend exists.
+**Order database.** Orders are sent to a Supabase function that validates them and saves them in a database (with style photos in private storage). The code and a step-by-step setup guide are in `supabase/` (`supabase/README.md`). Until `RAPH_CONFIG.orderEndpoint` in `js/products.js` is set to the function URL, orders are only saved in the customer's browser (`localStorage`, key `raph_orders`) and the confirmation screen says "Test mode".
 
 ## Dress page
 
@@ -49,6 +49,7 @@ Tapping a dress photo or name in the shop opens its page (`js/pdp.js`): photo ga
 - [ ] Real dress details: name, specs, price, lead time
 - [x] Three more dresses (Ruby, Cocoa, Ivory)
 - [ ] Real names and lead times for every dress
-- [ ] Order storage (database + photo storage) and a team view of incoming orders
+- [x] Order storage code (Supabase tables, storage, order function), tested locally
+- [ ] Create the Supabase project and connect it (see `supabase/README.md`)
 - [ ] Paystack checkout (mobile money + card)
 - [ ] Order emails (on hold)

@@ -277,22 +277,25 @@
         <p>${o.notes ? esc(o.notes) + '<br>' : ''}${o.photos} photo${o.photos === 1 ? '' : 's'}</p></div>`;
   }
 
-  // Sends a finished order. Throws if the endpoint rejects it. Without an endpoint the order
-  // is kept in this browser only.
+  // Sends a finished order and resolves with the server's reply ({ reference }), or null when there is
+  // no endpoint yet. Throws if the server rejects it. Without an endpoint the order is kept in this
+  // browser only.
   async function send(order, files) {
     if (config.orderEndpoint) {
       const fd = new FormData();
       fd.append('order', JSON.stringify(order));
       (files || []).forEach((f) => fd.append('photos', f.blob, f.name));
       const res = await fetch(config.orderEndpoint, { method: 'POST', body: fd });
-      if (!res.ok) throw new Error('bad status ' + res.status);
-    } else {
-      try {
-        const all = JSON.parse(localStorage.getItem('raph_orders') || '[]');
-        all.push(order);
-        localStorage.setItem('raph_orders', JSON.stringify(all));
-      } catch (e) { /* storage unavailable */ }
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error((data && data.error) || 'bad status ' + res.status);
+      return data;
     }
+    try {
+      const all = JSON.parse(localStorage.getItem('raph_orders') || '[]');
+      all.push(order);
+      localStorage.setItem('raph_orders', JSON.stringify(all));
+    } catch (e) { /* storage unavailable */ }
+    return null;
   }
 
   const ref = () => 'MAVE-' + Date.now().toString(36).slice(-5).toUpperCase() + Math.random().toString(36).slice(2, 4).toUpperCase();
@@ -301,7 +304,8 @@
     const order = Object.assign({ reference: ref(), placedAt: new Date().toISOString() }, collect());
     nextBtn.disabled = true; nextBtn.textContent = 'Sending…';
     try {
-      await send(order, state.files);
+      const reply = await send(order, state.files);
+      if (reply && reply.reference) order.reference = reply.reference;   // the server's reference is the real one
     } catch (e) {
       nextBtn.disabled = false; nextBtn.textContent = 'Place order';
       return fail('Could not send. Check your connection and try again.');
