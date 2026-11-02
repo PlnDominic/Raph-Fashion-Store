@@ -40,6 +40,10 @@ Each dress card has two buttons: **Add to cart** adds the ready-made dress to th
 
 Tapping a dress photo or name in the shop opens its page (`js/pdp.js`): photo gallery (drag the big photo to turn the dress), UK size, **Add to cart**, **Get it tailored**. Thumbnails come from `gallery` in `js/products.js`.
 
+## Website address
+
+The live address is https://www.mavecollections.com/ . It is used for the link-preview tags in `index.html` (`og:url`, `og:image`, `twitter:image`), `robots.txt` and `sitemap.xml`. If the domain ever changes, update those four places. WhatsApp and TikTok cache previews, so after changing the share image re-scrape it (Facebook Sharing Debugger works for WhatsApp too).
+
 ## Roadmap
 
 - [x] Scroll hero
