@@ -111,6 +111,7 @@
       <label class="field">Phone / WhatsApp<input name="phone" type="tel" inputmode="tel" autocomplete="tel" value="${R.esc(details.phone)}"></label>
       <label class="field">Delivery address<input name="address" autocomplete="street-address" value="${R.esc(details.address)}"></label>
       <label class="field">Notes <span class="opt">(optional)</span><textarea name="notes" rows="2">${R.esc(details.notes)}</textarea></label>
+      <div class="captcha" id="cartCaptcha"></div>
       <label class="consent"><input type="checkbox" name="consent"${details.consent ? ' checked' : ''}><span>I agree to the <a href="privacy.html" target="_blank" rel="noopener">Privacy Notice</a> and that Mave Collection may use my details to prepare and deliver my order.</span></label>
       <div class="cart__total"><span>Total</span><strong>${totalText()}</strong></div>`;
     foot.innerHTML = `
@@ -173,6 +174,7 @@
       return setError('Choose a size.', sel);
     }
     notice = ''; view = 'checkout'; render();
+    if (window.RaphCaptcha) window.RaphCaptcha.mount(body.querySelector('#cartCaptcha'));
     body.querySelector('input').focus({ preventScroll: true });
   }
 
@@ -196,7 +198,12 @@
     };
     const btn = foot.querySelector('[data-place]');
     btn.disabled = true; btn.textContent = 'Sending…';
-    try { const reply = await R.send(order, []); if (reply && reply.reference) order.reference = reply.reference; }
+    const captchaBox = body.querySelector('#cartCaptcha');
+    try {
+      const humanToken = window.RaphCaptcha ? await window.RaphCaptcha.token(captchaBox) : '';
+      const reply = await R.send(order, [], humanToken);
+      if (reply && reply.reference) order.reference = reply.reference;
+    }
     catch (e) {
       if (e && e.data && e.data.error === 'sold_out') {       // someone else just bought it: go back to the cart with the latest stock
         if (S) await S.refresh(true);
@@ -204,7 +211,8 @@
         return;
       }
       btn.disabled = false; btn.textContent = 'Place order';
-      return setError('Could not send. Check your connection and try again.');
+      if (window.RaphCaptcha) window.RaphCaptcha.reset(captchaBox);
+      return setError(e && e.data && e.data.message ? e.data.message : 'Could not send. Check your connection and try again.');
     }
     doneInfo = { ref: order.reference, msg: `Thank you, ${order.customer.name.split(' ')[0]}. We'll call you on ${order.customer.phone} to confirm.` };
     cart = []; details.consent = false; save();

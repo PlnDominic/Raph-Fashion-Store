@@ -83,6 +83,20 @@ Ready-made dresses are counted per size in the `product_stock` table (one row pe
 
 If the shop cannot load stock (old function, offline, no endpoint yet), every size is simply shown as available and the database still protects against overselling when the order is placed.
 
+## 8. Spam protection (Cloudflare Turnstile)
+
+The order address is public, so without a check a script could post thousands of fake orders. Turnstile is Cloudflare's free, mostly invisible "are you a real person" check. The website runs it in the background while a customer fills in the order form (a small box appears only if Cloudflare is unsure), and the order function refuses any order that doesn't carry a valid proof. It is off until you complete these steps, so do them **in this order** so real customers are never locked out:
+
+1. **Create the widget.** Cloudflare dashboard → **Turnstile** (left menu) → **Add widget**. Name: `Mave orders`. Hostnames: `www.mavecollections.com` and `mavecollections.com`. Widget mode: **Managed**. Create it, then copy the **Site Key** (public) and the **Secret Key** (private).
+2. **Put the Site Key in the website:** in `js/products.js` set `turnstileSiteKey: 'the site key'` (or send me the site key and I'll do it). Wait for the site to redeploy.
+3. **Redeploy the function** with the latest `supabase/functions/place-order/index.ts`. Nothing changes yet.
+4. **Switch it on:** Supabase → Edge Functions → **Secrets** → add `TURNSTILE_SECRET` = the Secret Key. **Never put the Secret Key in the website or paste it in a chat.**
+5. **Test:** place an order on the site. It should go through as usual.
+
+**Off switch:** delete the `TURNSTILE_SECRET` secret and the function stops requiring the check straight away.
+
+Good to know: if Cloudflare itself is unreachable the function lets customers who carry a token through (and logs it), so a Cloudflare outage cannot stop real orders. A customer whose browser blocks Cloudflare's script is asked to try again or order on WhatsApp.
+
 ## Before you take real payments (Paystack)
 Prices are currently sent from the browser, and the function stores what it is sent. That is fine while the team confirms every order by phone, but **before online payment goes live the prices must live in the database** and the function must look them up itself, otherwise a customer could change a price. Do that in the same step as the Paystack integration.
 

@@ -54,6 +54,7 @@ The live address is https://www.mavecollections.com/ . It is used for the link-p
 - [x] Three more dresses (Ruby, Cocoa, Ivory)
 - [x] Per-size stock for ready-made dresses (sold-out states, no overselling)
 - [x] Delivery, payment and returns information ("Good to know" section), privacy notice (`privacy.html`) and consent tick-boxes
+- [x] Spam protection with Cloudflare Turnstile (code ready; switch on with `supabase/README.md`, step 8)
 - [ ] Real names and lead times for every dress
 - [x] Order storage code (Supabase tables, storage, order function), tested locally
 - [ ] Create the Supabase project and connect it (see `supabase/README.md`)

@@ -96,6 +96,7 @@
     state.product = isCustom ? null : products.find((p) => p.id === productId) || null;
     state.custom = isCustom;
     state.step = 0;
+    if (window.RaphCaptcha) window.RaphCaptcha.mount($('#orderCaptcha'));   // runs in the background while they fill the form
     state.files.forEach((f) => URL.revokeObjectURL(f.url));
     state.files = [];
     form.reset();   // also clears the consent tick
@@ -290,10 +291,11 @@
   // Sends a finished order and resolves with the server's reply ({ reference }), or null when there is
   // no endpoint yet. Throws if the server rejects it. Without an endpoint the order is kept in this
   // browser only.
-  async function send(order, files) {
+  async function send(order, files, humanToken) {
     if (config.orderEndpoint) {
       const fd = new FormData();
       fd.append('order', JSON.stringify(order));
+      if (humanToken) fd.append('turnstile', humanToken);
       (files || []).forEach((f) => fd.append('photos', f.blob, f.name));
       const res = await fetch(config.orderEndpoint, { method: 'POST', body: fd });
       const data = await res.json().catch(() => null);
@@ -318,11 +320,13 @@
     const order = Object.assign({ reference: ref(), placedAt: new Date().toISOString() }, collect());
     nextBtn.disabled = true; nextBtn.textContent = 'Sending…';
     try {
-      const reply = await send(order, state.files);
+      const humanToken = window.RaphCaptcha ? await window.RaphCaptcha.token($('#orderCaptcha')) : '';
+      const reply = await send(order, state.files, humanToken);
       if (reply && reply.reference) order.reference = reply.reference;   // the server's reference is the real one
     } catch (e) {
       nextBtn.disabled = false; nextBtn.textContent = 'Place order';
-      return fail('Could not send. Check your connection and try again.');
+      if (window.RaphCaptcha) window.RaphCaptcha.reset($('#orderCaptcha'));
+      return fail(e && e.data && e.data.message ? e.data.message : 'Could not send. Check your connection and try again.');
     }
     clearDraft();
     nextBtn.disabled = false; nextBtn.textContent = 'Place order';

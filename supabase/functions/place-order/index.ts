@@ -14,6 +14,8 @@
 //   NOTIFY_FROM     optional sender, e.g. "Mave Collection <orders@mavecollections.com>" once that domain is
 //                   verified in Resend. Default: "Mave Collection Orders <onboarding@resend.dev>"
 //   ALLOWED_ORIGIN  optional, e.g. https://www.mavecollections.com, to accept orders from that site only
+//   TURNSTILE_SECRET  optional, the secret key of a Cloudflare Turnstile widget. When set, every order must carry a
+//                   valid Turnstile token (the website adds it), which stops scripts from posting fake orders.
 // An email problem never fails an order: the outcome is written to orders.notified_at / orders.notify_error
 // (see supabase/migrations/20261103000000_order_notifications.sql).
 import { createClient } from 'jsr:@supabase/supabase-js@2';
@@ -127,6 +129,28 @@ function validate(o: any) {
   }
 
   return { kind, customer_name, customer_phone, delivery_address, need_by, notes, items, measurements_cm, total };
+}
+
+// ---------- spam protection: Cloudflare Turnstile ----------
+// Returns true (a real person), false (rejected), or null when Cloudflare itself could not be reached, in which
+// case the order is let through (a Cloudflare outage must not stop real customers) and the problem is logged.
+async function verifyTurnstile(secret: string, token: string, ip: string | null): Promise<boolean | null> {
+  if (!token) return false;
+  try {
+    const body = new URLSearchParams({ secret, response: token });
+    if (ip) body.set('remoteip', ip);
+    const res = await fetch(Deno.env.get('TURNSTILE_VERIFY_URL') ?? 'https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body,
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (res.status >= 500) { console.error('turnstile verify: Cloudflare answered', res.status); return null; }
+    const data = await res.json();
+    return data?.success === true;
+  } catch (e) {
+    console.error('turnstile verify unreachable:', e instanceof Error ? e.message : String(e));
+    return null;
+  }
 }
 
 // ---------- the new-order email (sent with Resend's HTTPS API) ----------
@@ -385,6 +409,20 @@ Deno.serve(async (req: Request) => {
 
   let form: FormData;
   try { form = await req.formData(); } catch { return json({ error: 'Could not read the order.' }, 400); }
+
+  // spam protection: with TURNSTILE_SECRET set, only orders that carry a valid human-check token get in
+  const turnstileSecret = Deno.env.get('TURNSTILE_SECRET');
+  if (turnstileSecret) {
+    const token = form.get('turnstile');
+    const ip = (req.headers.get('cf-connecting-ip') ?? req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || null;
+    const human = await verifyTurnstile(turnstileSecret, typeof token === 'string' ? token : '', ip);
+    if (human === false) {
+      return json({
+        error: 'captcha',
+        message: "We couldn't confirm you're a real person. Please try again, or send your order to us on WhatsApp.",
+      }, 403);
+    }
+  }
 
   let order: ReturnType<typeof validate>;
   const photos = form.getAll('photos').filter((f): f is File => f instanceof File && f.size > 0);
