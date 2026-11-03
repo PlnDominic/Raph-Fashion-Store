@@ -133,6 +133,7 @@
               <p>Made-to-measure and custom dresses are made for one person, so they cannot be returned. If the fit is not right, we adjust it for you free of charge.</p>
               <p>Ready-made dresses can be exchanged if they have not been worn.</p>
               <p>Message us on WhatsApp as soon as you have tried your dress and we will arrange it.</p>
+              <p>Want it checked while it is being made? <a href="#" data-book-fit>Book a fitting at our Danfa studio</a>. You will need your order reference.</p>
             </div>
           </details>
           <details>
@@ -181,7 +182,7 @@
     </div>
 
     <div class="footer__bottom">
-      <p>&copy; <span id="year">2026</span> Mave Collection &middot; <a href="privacy.html">Privacy</a> &middot; <a href="#info">Delivery &amp; returns</a></p>
+      <p>&copy; <span id="year">2026</span> Mave Collection &middot; <a href="privacy.html">Privacy</a> &middot; <a href="#info">Delivery &amp; returns</a> &middot; <a href="#" data-book-fit>Book a fitting</a></p>
       <p>Developed by <a href="https://www.ecstasytechnologies.com" target="_blank" rel="noopener">Ecstasy Technologies</a></p>
     </div>
   </footer>
@@ -199,6 +200,7 @@
 
       <div class="order__body" id="orderBody">
         <section data-step="0">
+          <p class="saved" id="savedNote0" hidden></p>
           <h4>Your details</h4>
           <label class="field">Full name
             <input name="name" autocomplete="name" required>
@@ -219,6 +221,7 @@
             <h4>Measurements</h4>
             <span class="unitnote">Inches</span>
           </div>
+          <p class="saved" id="savedNote1" hidden></p>
           <div class="mguide" id="mGuide" aria-live="polite"></div>
           <div class="measure" id="measureFields"></div>
           <p class="warn" id="measureWarn" role="status"></p>
@@ -246,6 +249,7 @@
           <div id="review" class="review"></div>
           <label class="consent"><input type="checkbox" id="consent"><span>I agree to the <a href="privacy.html" target="_blank" rel="noopener">Privacy Notice</a> and that Mave Collection may use my details, measurements and photos to make and deliver my order.</span></label>
           <small class="err" id="consentError" role="alert"></small>
+          <label class="consent consent--soft"><input type="checkbox" id="remember" checked><span>Remember my details and measurements on this device, so next time I only change what is different.</span></label>
         </section>
 
         <section data-step="done" hidden>
@@ -255,6 +259,7 @@
             <p class="done__ref">Reference <strong id="doneRef"></strong></p>
             <p id="doneMsg"></p>
             <p class="devnote" id="devNote" hidden></p>
+            <p class="done__fit"><button type="button" class="link-btn" id="doneFit">Book a fitting at our studio</button></p>
             <button type="button" class="btn" id="doneClose">Back to the shop</button>
           </div>
         </section>
@@ -309,6 +314,57 @@
     </div>
   </dialog>
 
+  <dialog class="order fit" id="fitDialog" aria-labelledby="fitTitle">
+    <form class="order__form" id="fitForm" novalidate>
+      <header class="order__top">
+        <div>
+          <p class="eyebrow">Danfa studio</p>
+          <h3 id="fitTitle">Book a fitting</h3>
+        </div>
+        <button type="button" class="order__close" id="fitClose" aria-label="Close">&times;</button>
+      </header>
+
+      <div class="order__body" id="fitBody">
+        <section data-fit="find">
+          <p class="hint">Use the reference we gave you when you ordered.</p>
+          <label class="field">Order reference
+            <input name="reference" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="MAVE-XXXXXXX">
+          </label>
+          <label class="field">Phone number
+            <input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="The number you ordered with">
+          </label>
+        </section>
+
+        <section data-fit="pick" hidden>
+          <p class="fit__for" id="fitFor"></p>
+          <h4>Pick a day</h4>
+          <div class="fit__days" id="fitDays"></div>
+          <h4 class="fit__h">Pick a time</h4>
+          <div class="fit__times" id="fitTimes"></div>
+          <p class="hint" id="fitHint"></p>
+        </section>
+
+        <section data-fit="done" hidden>
+          <div class="done">
+            <div class="done__tick" aria-hidden="true">&#10003;</div>
+            <h4 id="fitDoneTitle">Fitting booked</h4>
+            <p class="fit__when" id="fitWhen"></p>
+            <p>Mave Collection studio, Danfa, Accra. It takes about an hour. We'll message you to confirm.</p>
+            <p><a class="fit__ics" id="fitIcs" download="mave-fitting.ics">Add to my calendar</a></p>
+            <button type="button" class="btn" id="fitDoneClose">Back to the shop</button>
+          </div>
+        </section>
+      </div>
+
+      <div class="captcha" id="fitCaptcha"></div>
+      <footer class="order__nav" id="fitNav">
+        <button type="button" class="btn btn--ghost" id="fitBack">Back</button>
+        <p class="err" id="fitError" role="alert"></p>
+        <button type="button" class="btn" id="fitNext">Continue</button>
+      </footer>
+    </form>
+  </dialog>
+
   <script src="js/products.js"></script>
   <script src="js/stock.js"></script>
   <script src="js/captcha.js"></script>
@@ -316,5 +372,6 @@
   <script src="js/shop.js"></script>
   <script src="js/cart.js"></script>
   <script src="js/pdp.js"></script>
+  <script src="js/fitting.js"></script>
 </body>
 </html>

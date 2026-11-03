@@ -172,6 +172,50 @@ const oneLine = (v: unknown) => String(v ?? '').replace(/[\r\n\0\x0b\x0c\x85]+|\
 const ghs = (n: number | null) => (n == null ? null : 'GHS ' + n.toLocaleString('en-GH', { maximumFractionDigits: 2 }));
 const safeUrl = (u: string) => { try { const x = new URL(u); return x.protocol === 'https:' || x.protocol === 'http:' ? x.href : null; } catch { return null; } };
 
+// ---------- fitting appointments (Danfa studio) ----------
+// Accra is on UTC all year, so these times are the same in the database and on the clock in Danfa.
+// To change the opening days or hours, edit these four numbers and redeploy.
+const FITTING_DAYS = [1, 2, 3, 4, 5, 6];   // 0 = Sunday ... 6 = Saturday (here Monday to Saturday)
+const FITTING_FIRST_HOUR = 10;             // first appointment starts at 10:00
+const FITTING_LAST_HOUR = 16;              // last appointment starts at 16:00 (each lasts an hour)
+const FITTING_WINDOW_DAYS = 21;            // customers can book up to three weeks ahead
+const FITTING_NOTICE_HOURS = 24;           // ...but not sooner than tomorrow
+
+function fittingSlots(now = new Date()): string[] {
+  const earliest = now.getTime() + FITTING_NOTICE_HOURS * 3600_000;
+  const out: string[] = [];
+  for (let d = 0; d <= FITTING_WINDOW_DAYS; d++) {
+    const day = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + d));
+    if (!FITTING_DAYS.includes(day.getUTCDay())) continue;
+    for (let h = FITTING_FIRST_HOUR; h <= FITTING_LAST_HOUR; h++) {
+      const t = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), h));
+      if (t.getTime() >= earliest) out.push(t.toISOString());
+    }
+  }
+  return out;
+}
+
+// free slots grouped by day: { days: [{ date: '2026-11-10', slots: ['10:00', '11:00'] }] }
+async function freeFittings(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+) {
+  const all = fittingSlots();
+  if (all.length === 0) return { days: [], all };
+  const { data, error } = await supabase.from('fittings').select('slot_start')
+    .in('status', ['booked', 'blocked']).gte('slot_start', all[0]).lte('slot_start', all[all.length - 1]);
+  if (error) throw new Error(error.message);
+  const taken = new Set(((data ?? []) as Array<{ slot_start: string }>).map((r) => new Date(r.slot_start).toISOString()));
+  const free = all.filter((t) => !taken.has(t));
+  const days: Array<{ date: string; slots: string[] }> = [];
+  for (const t of free) {
+    const date = t.slice(0, 10);
+    const last = days[days.length - 1];
+    if (last && last.date === date) last.slots.push(t.slice(11, 16)); else days.push({ date, slots: [t.slice(11, 16)] });
+  }
+  return { days, all: free };
+}
+
 // Ghana numbers: 0541791986 -> 233541791986 for wa.me; anything else keeps its digits
 function waNumber(phone: string) {
   const d = phone.replace(/\D/g, '');
@@ -389,6 +433,96 @@ async function notifyTeam(
   if (updateError) console.error('could not record the notification result', updateError.message);
 }
 
+const fittingWhen = (iso: string) =>
+  new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Accra', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso));
+
+function buildFittingEmail(f: { reference: string; name: string; phone: string; slot: string; moved: boolean }) {
+  const when = fittingWhen(f.slot);
+  const first = f.name.split(' ')[0] || f.name;
+  const wa = `https://wa.me/${waNumber(f.phone)}?text=${encodeURIComponent(`Hello ${first}, this is Mave Collection about your fitting on ${when}.`)}`;
+  const subject = `${f.moved ? 'Fitting moved' : 'Fitting booked'}: ${when} · ${f.name} (${f.reference})`;
+  const text = [
+    f.moved ? 'A fitting was moved.' : 'A fitting was booked.', '',
+    when, `${f.name} · ${f.phone}`, `Order ${f.reference}`, '', `WhatsApp: ${wa}`, '',
+    'Mave Collection, Danfa, Accra',
+    'To cancel it: Supabase, Table Editor, fittings, set status to cancelled.',
+  ].join('\n');
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only"><title>${esc(subject)}</title></head>
+<body style="margin:0;padding:0;background:#ffffff">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;text-align:left">
+<tr><td style="padding:28px 24px 0"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+  <td valign="middle"><img src="${LOGO_URL}" width="34" height="34" alt="" style="display:block;border:0"></td>
+  <td valign="middle" style="padding-left:10px;font:600 17px/1 ${SERIF};color:${GREEN}">Mave Collection</td></tr></table></td></tr>
+<tr><td style="padding:30px 24px 0">
+  <div style="font:14px/1.4 ${SANS};color:${MUTED}">${f.moved ? 'Fitting moved' : 'Fitting booked'} &middot; Danfa studio</div>
+  <h1 style="margin:6px 0 4px;font:400 30px/1.2 ${SERIF};color:${INK}">${esc(when)}</h1>
+  <div style="font:16px/1.5 ${SANS};color:${INK}">${esc(f.name)} &middot; order ${esc(f.reference)}</div>
+  <div style="margin-top:16px"><a href="${esc(wa)}" style="display:inline-block;background:${GREEN};color:#ffffff;text-decoration:none;font:600 15px/1 ${SANS};padding:13px 20px;border-radius:6px">Message ${esc(first)} on WhatsApp</a>
+  <a href="tel:${esc(f.phone.replace(/[^\d+]/g, ''))}" style="display:inline-block;margin:6px 0 0 14px;font:15px/1.2 ${SANS};color:${GREEN}">or call ${esc(f.phone)}</a></div>
+</td></tr>
+<tr><td style="padding:34px 24px 36px"><div style="border-top:1px solid ${RULE};padding-top:16px;font:13px/1.6 ${SANS};color:${MUTED}">
+  To cancel it, open Supabase, then Table Editor, then the fittings table, and set its status to cancelled.</div></td></tr>
+</table></td></tr></table></body></html>`;
+  return { subject, text, html };
+}
+
+// books a fitting for an existing order (the phone number must match the order)
+async function handleFitting(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  form: FormData,
+) {
+  const reference = String(form.get('reference') ?? '').trim().slice(0, 40);
+  const phone = String(form.get('phone') ?? '').trim().slice(0, 30);
+  const slot = String(form.get('slot') ?? '').trim();
+  if (!reference || phone.replace(/\D/g, '').length < 9) {
+    return json({ error: 'invalid', message: 'Enter your order reference and the phone number you ordered with.' }, 400);
+  }
+
+  const { all } = await freeFittings(supabase);
+  const slotIso = isNaN(Date.parse(slot)) ? '' : new Date(slot).toISOString();
+  if (!slotIso || !all.includes(slotIso)) {
+    return json({ error: 'slot_taken', message: 'Sorry, that time has just been taken. Please choose another.' }, 409);
+  }
+
+  const { data, error } = await supabase.rpc('book_fitting', { p: { reference, phone, slot: slotIso } });
+  if (error) {
+    const msg = String(error.message ?? '');
+    if (msg.includes('ORDER_NOT_FOUND')) {
+      return json({ error: 'order_not_found', message: "We couldn't find an order with that reference and phone number. Please check both." }, 404);
+    }
+    if (msg.includes('SLOT_TAKEN')) {
+      return json({ error: 'slot_taken', message: 'Sorry, that time has just been taken. Please choose another.' }, 409);
+    }
+    console.error('book_fitting failed', msg);
+    return json({ error: 'Could not book the fitting. Please try again.' }, 500);
+  }
+
+  const f = data as { id: string; reference: string; name: string; phone: string; slot: string; moved: boolean };
+  const apiKey = Deno.env.get('RESEND_API_KEY');
+  const to = (Deno.env.get('NOTIFY_TO') ?? '').split(',').map((x) => x.trim()).filter(Boolean);
+  const task = (async () => {
+    if (!apiKey || to.length === 0) return;
+    let err: string | null = null;
+    try {
+      const mail = buildFittingEmail({ ...f, slot: new Date(f.slot).toISOString() });
+      err = await sendWithResend(apiKey, {
+        from: Deno.env.get('NOTIFY_FROM') ?? 'Mave Collection Orders <onboarding@resend.dev>',
+        to, subject: mail.subject, html: mail.html, text: mail.text,
+      }, `fitting-${f.id}`);
+    } catch (e) { err = `notification failed: ${e instanceof Error ? e.message : String(e)}`; }
+    if (err) console.error('fitting notify', f.reference, err);
+    await supabase.from('fittings').update(err ? { notify_error: err.slice(0, 300) } : { notified_at: new Date().toISOString(), notify_error: null }).eq('id', f.id);
+  })().catch((e) => console.error('fitting notify crashed', e));
+  // deno-lint-ignore no-explicit-any
+  const runtime = (globalThis as any).EdgeRuntime;
+  if (runtime?.waitUntil) runtime.waitUntil(task); else await task;
+
+  return json({ ok: true, slot: new Date(f.slot).toISOString(), label: fittingWhen(f.slot), moved: f.moved });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   if (req.method !== 'POST' && req.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
@@ -398,6 +532,15 @@ Deno.serve(async (req: Request) => {
   });
 
   // the shop asks what is in stock (a few seconds of caching keeps this cheap)
+  if (req.method === 'GET' && new URL(req.url).searchParams.has('fittings')) {
+    try {
+      const { days } = await freeFittings(supabase);
+      return new Response(JSON.stringify({ days }), { headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    } catch (e) {
+      console.error('fittings read failed', e instanceof Error ? e.message : String(e));
+      return json({ error: 'Fittings are not available' }, 500);
+    }
+  }
   if (req.method === 'GET') {
     const { data, error } = await supabase.from('product_stock').select('product_id,size,qty');
     if (error) { console.error('stock read failed', error.message); return json({ error: 'Stock is not available' }, 500); }
@@ -429,6 +572,8 @@ Deno.serve(async (req: Request) => {
       }, 403);
     }
   }
+
+  if (form.get('action') === 'fitting') return await handleFitting(supabase, form);
 
   let order: ReturnType<typeof validate>;
   const photos = form.getAll('photos').filter((f): f is File => f instanceof File && f.size > 0);

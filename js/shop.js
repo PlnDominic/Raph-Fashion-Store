@@ -107,6 +107,7 @@
     form.reset();   // also clears the consent tick
     dialog.querySelectorAll('[data-key]').forEach((i) => { delete i.dataset.cm; });
     restoreDraft();
+    applyProfile();
     renderThumbs();
     $('#orderEyebrow').textContent = isCustom ? 'Custom design' : 'Made to measure';
     $('#orderTitle').textContent = isCustom ? 'Your own design' : state.product.name;
@@ -177,8 +178,8 @@
   function showGuide(key) {
     const m = MEASUREMENTS.find((x) => x.key === key) || MEASUREMENTS[0];
     const g = $('#mGuide');
-    if (g.dataset.key === m.key) return;
-    g.dataset.key = m.key;
+    if (g.dataset.for === m.key) return;
+    g.dataset.for = m.key;
     g.innerHTML = `${diagram(m.key)}<div><b>${m.label}${m.optional ? ' <i>optional</i>' : ''}</b><p>${TIPS[m.key] || m.hint}</p></div>`;
   }
 
@@ -389,7 +390,9 @@
       if (window.RaphCaptcha) window.RaphCaptcha.reset($('#orderCaptcha'));
       return fail(e && e.data && e.data.message ? e.data.message : 'Could not send. Check your connection and try again.');
     }
+    saveProfile(order);
     clearDraft();
+    state.last = { reference: order.reference, phone: order.customer.phone };
     nextBtn.disabled = false; nextBtn.textContent = 'Place order';
     $('#doneRef').textContent = order.reference;
     $('#doneMsg').textContent = `Thank you, ${order.customer.name.split(' ')[0]}. We'll call you on ${order.customer.phone} to confirm.`;
@@ -418,6 +421,74 @@
   }
   function clearDraft() { try { localStorage.removeItem(DRAFT); } catch (e) { /* ignore */ } }
 
+
+  // ---------- saved details (this device only) ----------
+  // After an order, the customer's details and measurements can be kept in this browser so that next time
+  // they only change what is different. Nothing is sent anywhere: it lives in localStorage and can be cleared.
+  const PROFILE = 'raph_profile';
+  const readProfile = () => { try { const p = JSON.parse(localStorage.getItem(PROFILE) || 'null'); return p && p.v === 1 && p.m ? p : null; } catch (e) { return null; } };
+  const dateShort = (iso) => { try { return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); } catch (e) { return ''; } };
+
+  function saveProfile(order) {
+    try {
+      if (!$('#remember').checked) return;
+      const m = {};
+      Object.entries(order.measurementsCm || {}).forEach(([k, v]) => { if (v != null) m[k] = v; });
+      localStorage.setItem(PROFILE, JSON.stringify({
+        v: 1, savedAt: new Date().toISOString(),
+        name: order.customer.name, phone: order.customer.phone, address: order.customer.address, m,
+      }));
+    } catch (e) { /* ignore */ }
+  }
+
+  // fill empty boxes from the saved profile, and mark which measurements differ from it
+  function applyProfile() {
+    state.saved = null;
+    const p = readProfile();
+    if (!p) { renderSavedNotes(); return; }
+    state.saved = p;
+    ['name', 'phone', 'address'].forEach((k) => { if (p[k] && !form.elements[k].value) form.elements[k].value = p[k]; });
+    dialog.querySelectorAll('[data-key]').forEach((i) => { if (!i.dataset.cm && p.m[i.dataset.key] != null) setCm(i, p.m[i.dataset.key]); });
+    renderSavedNotes();
+    markChanged();
+  }
+
+  function renderSavedNotes() {
+    const p = state.saved;
+    ['0', '1'].forEach((n) => {
+      const el = $('#savedNote' + n);
+      if (!p) { el.hidden = true; return; }
+      const first = esc((p.name || '').split(' ')[0]);
+      el.hidden = false;
+      el.innerHTML = n === '0'
+        ? `<span>Welcome back${first ? ', ' + first : ''}. We filled in your details from ${dateShort(p.savedAt)}.</span> <button type="button" data-forget>Not you? Clear</button>`
+        : `<span>Your measurements from ${dateShort(p.savedAt)} are filled in. Change only what is different.</span> <button type="button" data-forget>Clear</button>`;
+    });
+  }
+
+  // a small "changed" tag on any measurement that no longer matches the saved one
+  function markChanged() {
+    dialog.querySelectorAll('[data-key]').forEach((i) => {
+      const saved = state.saved && state.saved.m[i.dataset.key];
+      const now = i.dataset.cm == null ? null : Number(i.dataset.cm);
+      const changed = saved != null && now != null && Math.abs(now - saved) > 0.06;
+      i.closest('.field').classList.toggle('is-changed', changed);
+    });
+  }
+
+  function forgetProfile() {
+    try { localStorage.removeItem(PROFILE); } catch (e) { /* ignore */ }
+    if (state.saved) {
+      ['name', 'phone', 'address'].forEach((k) => { if (form.elements[k].value === state.saved[k]) form.elements[k].value = ''; });
+      dialog.querySelectorAll('[data-key]').forEach((i) => {
+        const v = state.saved.m[i.dataset.key];
+        if (v != null && Number(i.dataset.cm) === v) { delete i.dataset.cm; i.value = ''; }
+      });
+    }
+    state.saved = null;
+    renderSavedNotes(); markChanged(); saveDraft();
+  }
+
   window.Raph = { money, ref, send, config, esc, compress };
 
   // ---------- wiring ----------
@@ -432,6 +503,8 @@
     if (trigger) { e.preventDefault(); open(trigger.dataset.order); }
   });
   $('#orderClose').addEventListener('click', close);
+  dialog.addEventListener('click', (e) => { if (e.target.closest('[data-forget]')) forgetProfile(); });
+  $('#doneFit').addEventListener('click', () => { const l = state.last || {}; close(); if (window.RaphFit) window.RaphFit.open(l); });
   $('#doneClose').addEventListener('click', () => { close(); document.getElementById('shop').scrollIntoView({ behavior: 'smooth' }); });
   dialog.addEventListener('click', (e) => { if (e.target === dialog) close(); });   // click on the backdrop
   backBtn.addEventListener('click', () => { if (state.step > 0) showStep(state.step - 1); });
@@ -446,7 +519,7 @@
   form.addEventListener('input', (e) => {
     const inp = e.target.closest('[data-key]');
     if (inp) { const v = parseFloat(inp.value); if (isNaN(v)) delete inp.dataset.cm; else inp.dataset.cm = toCm(v); }
-    saveDraft(); if (state.step === 1) softWarnings();
+    saveDraft(); if (state.step === 1) softWarnings(); markChanged();
   });
   $('#refInput').addEventListener('change', (e) => { addFiles([...e.target.files]); e.target.value = ''; });
   $('#thumbs').addEventListener('click', (e) => {

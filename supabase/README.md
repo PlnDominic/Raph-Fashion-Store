@@ -97,6 +97,21 @@ The order address is public, so without a check a script could post thousands of
 
 Good to know: if Cloudflare itself is unreachable the function lets customers who carry a token through (and logs it), so a Cloudflare outage cannot stop real orders. A customer whose browser blocks Cloudflare's script is asked to try again or order on WhatsApp.
 
+## 9. Fitting appointments (Danfa studio)
+
+Customers book a one-hour fitting from the "Order received" screen, from the "Good to know" section, or from the footer. They enter their order reference and the phone number they ordered with (so nobody can book against someone else's order), pick a free day and time, and you get an email. Each slot can be booked once; a customer who books again moves their appointment.
+
+1. **Run the fittings SQL once:** SQL Editor, paste `supabase/migrations/20261105000000_fittings.sql`, Run.
+2. **Redeploy the function** with the latest `supabase/functions/place-order/index.ts`.
+3. **Opening hours** are the five `FITTING_*` values near the top of that file: Monday to Saturday, 10:00 to 16:00 (last start), up to 21 days ahead, at least 24 hours' notice. Change them and redeploy.
+
+**Day to day**
+- See appointments: SQL Editor, `select * from fittings_overview;`.
+- Cancel one: Table Editor, `fittings`, set `status` to `cancelled`. The slot is free again.
+- Close the studio for a slot or a day: insert rows in `fittings` with `status = 'blocked'` and the `slot_start` times (no order needed). Example for a whole Tuesday: `insert into fittings (slot_start, status) select d + h * interval '1 hour', 'blocked' from (select date '2026-11-10') x(d), generate_series(10, 16) h;`
+
+If the fittings SQL has not been run, the booking screen simply says it cannot load times and asks the customer to message you on WhatsApp.
+
 ## Before you take real payments (Paystack)
 Prices are currently sent from the browser, and the function stores what it is sent. That is fine while the team confirms every order by phone, but **before online payment goes live the prices must live in the database** and the function must look them up itself, otherwise a customer could change a price. Do that in the same step as the Paystack integration.
 
