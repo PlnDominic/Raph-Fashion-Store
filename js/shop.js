@@ -108,6 +108,7 @@
     dialog.querySelectorAll('[data-key]').forEach((i) => { delete i.dataset.cm; });
     restoreDraft();
     renderThumbs();
+    $('#orderEyebrow').textContent = isCustom ? 'Custom design' : 'Made to measure';
     $('#orderTitle').textContent = isCustom ? 'Your own design' : state.product.name;
     $('#styleOpt').hidden = isCustom;
     $('#refLabel').textContent = isCustom ? 'Photos of the style you want' : 'Photos (optional)';
@@ -127,7 +128,7 @@
     stepsEl.hidden = done;
     if (!done) {
       stepsEl.innerHTML = STEP_NAMES.map((name, i) =>
-        `<li class="${i === n ? 'is-now' : i < n ? 'is-done' : ''}"><span>${i + 1}</span>${name}</li>`).join('');
+        `<li class="${i === n ? 'is-now' : i < n ? 'is-done' : ''}"><i></i><b>${name}</b></li>`).join('');
       backBtn.style.visibility = n === 0 ? 'hidden' : 'visible';
       nextBtn.textContent = n === 3 ? 'Place order' : 'Next';
       if (n === 3) renderReview();
