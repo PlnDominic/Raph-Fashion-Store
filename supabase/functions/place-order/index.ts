@@ -139,7 +139,7 @@ function validate(o: any) {
 // Returns true (a real person), false (rejected), or null when Cloudflare itself could not be reached, in which
 // case the order is let through (a Cloudflare outage must not stop real customers) and the problem is logged.
 async function verifyTurnstile(secret: string, token: string, ip: string | null): Promise<boolean | null> {
-  if (!token) return false;
+  if (!token) { console.error('turnstile: order arrived without a token'); return false; }
   try {
     const body = new URLSearchParams({ secret, response: token });
     if (ip) body.set('remoteip', ip);
@@ -150,6 +150,7 @@ async function verifyTurnstile(secret: string, token: string, ip: string | null)
     });
     if (res.status >= 500) { console.error('turnstile verify: Cloudflare answered', res.status); return null; }
     const data = await res.json();
+    if (data?.success !== true) console.error('turnstile rejected:', JSON.stringify(data?.['error-codes'] ?? []));
     return data?.success === true;
   } catch (e) {
     console.error('turnstile verify unreachable:', e instanceof Error ? e.message : String(e));

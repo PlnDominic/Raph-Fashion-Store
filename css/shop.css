@@ -47,7 +47,7 @@ button.btn { font-family: inherit; cursor: pointer; border: 0; }
 .footer__chat { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 
 /* official brand logos and colours (Simple Icons, CC0) */
-.footer__chat .wa { display: inline-flex; align-items: center; gap: 8px; padding: 5px 14px 5px 5px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink); font-size: 0.86rem; text-decoration: none; transition: border-color 0.2s; }
+.footer__chat .wa { display: inline-flex; align-items: center; gap: 8px; padding: 5px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink); font-size: 0.86rem; text-decoration: none; transition: border-color 0.2s; }
 .footer__chat .wa:hover { border-color: #25d366; text-decoration: none; }
 .wa__logo { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #25d366; font-style: normal; flex: none; }
 .wa__logo svg { display: block; }
@@ -242,6 +242,6 @@ body:has(dialog[open]) { overflow: hidden; }
 #consentError { display: block; margin: 4px 0 0 32px; font-size: 0.82rem; }
 
 .captcha:empty { display: none; }
-.captcha { margin: 14px 0 0; }
+.captcha { margin: 0; padding: 0 var(--gutter, 20px); }
 
 .unitnote { font-size: 0.8rem; color: var(--muted); }

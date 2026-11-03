@@ -23,7 +23,7 @@
   // start the check inside `el` (safe to call again for the same element)
   async function mount(el) {
     if (!config.turnstileSiteKey || !el || widgets.has(el)) return;
-    const entry = { id: null, token: '' };
+    const entry = { id: null, token: '', error: null, retries: 0 };
     widgets.set(el, entry);
     const ts = await load();
     if (!ts || !el.isConnected) { widgets.delete(el); return; }
@@ -32,8 +32,14 @@
       appearance: 'interaction-only',
       size: 'flexible',
       callback: (t) => { entry.token = t; },
-      'expired-callback': () => { entry.token = ''; },
-      'error-callback': () => { entry.token = ''; },
+      'expired-callback': () => { entry.token = ''; try { ts.reset(entry.id); } catch (e) { /* ignore */ } },
+      // a failed check is retried a couple of times; the code is kept so the problem can be diagnosed
+      'error-callback': (code) => {
+        entry.token = ''; entry.error = code;
+        console.warn('Turnstile error', code);
+        if (entry.retries++ < 2) setTimeout(() => { try { ts.reset(entry.id); } catch (e) { /* ignore */ } }, 1500);
+        return true;
+      },
     });
   }
 
