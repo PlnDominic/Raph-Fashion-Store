@@ -261,3 +261,34 @@ body:has(dialog[open]) { overflow: hidden; }
 .captcha { margin: 0; padding: 0 var(--gutter, 20px); }
 
 .unitnote { font-size: 0.8rem; color: var(--muted); }
+
+/* phones: a little smaller type (inputs stay 16px so iPhones don't zoom in) */
+@media (max-width: 600px) {
+  .card__body h3 { font-size: 1.35rem; }
+  .card__body p { font-size: 0.88rem; }
+  .card__meta strong { font-size: 0.98rem; }
+  .card .btn { font-size: 0.64rem; }
+  .info__head h2 { font-size: clamp(1.7rem, 7vw, 2.1rem); }
+  .info summary { font-size: 1.15rem; padding: 16px 0; }
+  .info p { font-size: 0.9rem; }
+  .footer { font-size: 0.86rem; }
+  .footer__name { font-size: 1.3rem; }
+  .footer__tag { font-size: 0.95rem; }
+  .footer__col h3 { font-size: 0.64rem; }
+  .order__top h3, .cart__top h3 { font-size: 1.45rem; }
+  .order__body h4 { font-size: 1.3rem; }
+  .order__steps li { font-size: 0.66rem; }
+  .hint { font-size: 0.82rem; }
+  .field { font-size: 0.78rem; }
+  .field small, .warn, .unitnote, .drop span, .devnote { font-size: 0.78rem; }
+  .consent { font-size: 0.8rem; }
+  .rv__name { font-size: 1.25rem; }
+  .rv__price, .rv__rows dd, .rv__note { font-size: 0.88rem; }
+  .rv__rows dt { font-size: 0.8rem; }
+  .rv__meas dd { font-size: 1.15rem; }
+  .rv__meas dt { font-size: 0.68rem; }
+  .line h4 { font-size: 1.08rem; }
+  .line p { font-size: 0.84rem; }
+  .done__ref strong { font-size: 1.3rem; }
+  .order__nav .btn { font-size: 0.74rem; }
+}

@@ -13,3 +13,10 @@
 .legal a { color: var(--ember); }
 .footer--slim { padding-top: 24px; }
 .footer--slim .footer__bottom { margin-top: 0; border-top: 0; padding-top: 0; }
+
+@media (max-width: 600px) {
+  .legal { font-size: 0.92rem; }
+  .legal h1 { font-size: clamp(1.8rem, 8vw, 2.2rem); }
+  .legal__lede { font-size: 0.95rem; }
+  .legal h2 { font-size: 1.3rem; margin-top: 32px; }
+}

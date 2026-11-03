@@ -62,3 +62,11 @@
 .pdp__more { margin: 14px 0 0; font-size: 0.85rem; }
 .pdp__more a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
 .pdp__more a:hover { color: var(--ember); }
+
+@media (max-width: 600px) {
+  .pdp__info h2 { font-size: clamp(1.7rem, 7.5vw, 2.1rem); }
+  .pdp__price { font-size: 1.15rem; }
+  .pdp__label, .pdp__stock { font-size: 0.82rem; }
+  .chip { font-size: 0.84rem; height: 40px; min-width: 48px; }
+  .pdp__actions .btn { font-size: 0.68rem; }
+}
