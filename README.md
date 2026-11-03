@@ -32,7 +32,7 @@ The hero expects a clip of the model on a plain white studio backdrop (generated
 
 "Get it tailored" (hero and cards) open the order sheet (`js/shop.js`): details, measurements (cm or in, with range checks), style photos (up to 5, shrunk on the phone before upload) and a review step. A half-finished form is kept in the browser.
 
-Each dress card has two buttons: **Add to cart** adds the ready-made dress to the cart (`js/cart.js`: choose a size, set the quantity, check out with name, phone and delivery address), and **Get it tailored** opens the made-to-measure sheet. A dress only gets the Add to cart button if `readyMade: true` in `js/products.js`; sizes come from `RAPH_CONFIG.sizes`. The cart is kept in the browser.
+Each dress card has two buttons: **Add to cart** adds the ready-made dress to the cart (`js/cart.js`: choose a size, set the quantity, check out with name, phone and delivery address), and **Get it tailored** opens the made-to-measure sheet. A dress only gets the Add to cart button if `readyMade: true` in `js/products.js`; sizes and quantities come from the `product_stock` table in Supabase (see `supabase/README.md`, step 7); `RAPH_CONFIG.sizes` is only a fallback. The cart is kept in the browser.
 
 **Order database.** Orders are sent to a Supabase function that validates them and saves them in a database (with style photos in private storage). The code and a step-by-step setup guide are in `supabase/` (`supabase/README.md`). Until `RAPH_CONFIG.orderEndpoint` in `js/products.js` is set to the function URL, orders are only saved in the customer's browser (`localStorage`, key `raph_orders`) and the confirmation screen says "Test mode".
 
@@ -52,6 +52,7 @@ The live address is https://www.mavecollections.com/ . It is used for the link-p
 - [x] Dress page
 - [ ] Real dress details: name, specs, price, lead time
 - [x] Three more dresses (Ruby, Cocoa, Ivory)
+- [x] Per-size stock for ready-made dresses (sold-out states, no overselling)
 - [ ] Real names and lead times for every dress
 - [x] Order storage code (Supabase tables, storage, order function), tested locally
 - [ ] Create the Supabase project and connect it (see `supabase/README.md`)

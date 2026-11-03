@@ -52,8 +52,9 @@ window.PRODUCTS = [
 
 window.RAPH_CONFIG = {
   currency: 'GHS',
-  // sizes offered when buying a ready-made dress
-  sizes: ['UK 8', 'UK 10', 'UK 12', 'UK 14', 'UK 16', 'UK 18'],
+  // Fallback sizes, used only until/unless stock can be loaded. The real list (and how many of each are left)
+  // comes from the product_stock table in Supabase; see supabase/README.md.
+  sizes: ['UK 8', 'UK 10', 'UK 12', 'UK 14', 'UK 16', 'UK 18', 'UK 20', 'UK 22'],
   // Where finished orders are sent: the Supabase Edge Function URL, e.g.
   //   https://<project-ref>.supabase.co/functions/v1/<function-slug>
   // (the slug in the address is the one on the function's Overview tab; it can differ from the name

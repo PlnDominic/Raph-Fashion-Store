@@ -32,21 +32,25 @@
 
   // ---------- shop grid ----------
   function renderGrid() {
+    const S = window.RaphStock;
     const cards = products.map((p) => {
+      const out = !!(p.readyMade && S && S.soldOut(p.id));
+      const last = !!(p.readyMade && S && S.known && !out && S.total(p.id) === 1);
       const price = p.price != null ? money(p.price) : 'Price on request';
       const lead = p.leadTime ? `<span>Ready in ${p.leadTime}</span>` : '';
       return `
         <article class="card" data-id="${p.id}">
           <div class="card__media" data-view="${p.id}"${p.images.length > 1 ? ` data-images="${p.images.join('|')}"` : ''}>
             <img src="${p.images[0]}" alt="${p.name}" loading="lazy" width="496" height="800">
+            ${out ? '<span class="card__badge">Sold out</span>' : last ? '<span class="card__badge card__badge--soft">Last piece</span>' : ''}
             ${p.images.length > 1 ? '<span class="card__turn" aria-hidden="true">Drag to turn</span>' : ''}
           </div>
           <div class="card__body">
             <h3><button type="button" class="card__name" data-view="${p.id}">${p.name}</button></h3>
             <p class="card__meta"><strong>${price}</strong>${lead}</p>
             <div class="card__actions">
-              ${p.readyMade ? `<button class="btn" type="button" data-add="${p.id}">Add to cart</button>` : ''}
-              <button class="btn ${p.readyMade ? 'btn--ghost' : ''}" type="button" data-order="${p.id}">Get it tailored</button>
+              ${p.readyMade ? (out ? '<button class="btn btn--soldout" type="button" disabled>Sold out</button>' : `<button class="btn" type="button" data-add="${p.id}">Add to cart</button>`) : ''}
+              <button class="btn ${p.readyMade && !out ? 'btn--ghost' : ''}" type="button" data-order="${p.id}">Get it tailored</button>
             </div>
           </div>
         </article>`;
@@ -287,7 +291,11 @@
       (files || []).forEach((f) => fd.append('photos', f.blob, f.name));
       const res = await fetch(config.orderEndpoint, { method: 'POST', body: fd });
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error((data && data.error) || 'bad status ' + res.status);
+      if (!res.ok) {
+        const err = new Error((data && (data.message || data.error)) || 'bad status ' + res.status);
+        err.status = res.status; err.data = data;     // e.g. { error: 'sold_out', message, productId, size }
+        throw err;
+      }
       return data;
     }
     try {
@@ -345,6 +353,7 @@
   // ---------- wiring ----------
   buildMeasureFields();
   renderGrid();
+  if (window.RaphStock) window.RaphStock.onChange(renderGrid);   // redraw when stock arrives or changes
   const year = document.getElementById('year');
   if (year) year.textContent = new Date().getFullYear();
 

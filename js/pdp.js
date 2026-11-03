@@ -3,6 +3,7 @@
   const R = window.Raph;
   const products = window.PRODUCTS || [];
   const config = window.RAPH_CONFIG || {};
+  const S = window.RaphStock;
   const dlg = document.getElementById('pdp');
   if (!dlg || !R) return;
 
@@ -30,16 +31,43 @@
     $('pdpPrice').textContent = product.price != null ? R.money(product.price) : 'Price on request';
     $('pdpSizeBlock').hidden = !product.readyMade;
     $('pdpAdd').hidden = !product.readyMade;
-    $('pdpSizes').innerHTML = (config.sizes || []).map((s) =>
-      `<button type="button" class="chip" data-size="${R.esc(s)}" aria-pressed="false">${R.esc(s.replace(/^UK\s*/, ''))}</button>`).join('');
-    $('pdpSizeLabel').textContent = 'choose';
+    renderSizes();
     $('pdpError').textContent = '';
     $('pdpTailor').dataset.order = product.id;
     $('pdpHint').hidden = !product.spin;
     seq.forEach((u) => { new Image().src = u; });
+    if (S) S.refresh(true);                      // the latest stock whenever a dress is opened
     if (!dlg.open) dlg.showModal();
     dlg.querySelector('.pdp__scroll').scrollTop = 0;
   }
+
+  // size chips, stock notes and the Add to cart / Get it tailored buttons for the current dress
+  function renderSizes() {
+    if (!product || !product.readyMade) return;
+    const sizes = S ? S.sizes(product.id) : (config.sizes || []);
+    if (size && S && S.qty(product.id, size) <= 0) size = '';          // the chosen size just sold out
+    const allOut = !!(S && S.soldOut(product.id));
+    $('pdpSizes').innerHTML = sizes.map((s) => {
+      const out = S ? S.qty(product.id, s) <= 0 : false;
+      return `<button type="button" class="chip${out ? ' is-out' : ''}" data-size="${R.esc(s)}" aria-pressed="${s === size}"${out ? ` disabled aria-label="${R.esc(s)}, sold out"` : ''}>${R.esc(s.replace(/^UK\s*/, ''))}</button>`;
+    }).join('');
+    $('pdpSizeLabel').textContent = size ? size.replace(/^UK\s*/, '') : 'choose';
+
+    const left = size && S ? S.qty(product.id, size) : Infinity;
+    const note = $('pdpStock');
+    if (allOut) note.innerHTML = '<b>Sold out.</b> We can still make this dress to your measurements.';
+    else if (left <= 2) note.innerHTML = `<b>Only ${left} left</b> in ${R.esc(size)}.`;
+    else if (S && S.known && sizes.some((s) => S.qty(product.id, s) <= 0)) note.textContent = 'Crossed-out sizes are sold out. We can make any size to measure.';
+    else note.textContent = '';
+    note.hidden = !note.textContent && !note.innerHTML;
+
+    const add = $('pdpAdd');
+    add.disabled = allOut;
+    add.textContent = allOut ? 'Sold out' : 'Add to cart';
+    add.classList.toggle('btn--soldout', allOut);
+    $('pdpTailor').classList.toggle('btn--ghost', !allOut);     // tailoring becomes the main action
+  }
+  if (S) S.onChange(() => { if (dlg.open) renderSizes(); });
 
   function show(u) {
     img.src = u;
@@ -72,9 +100,9 @@
     if (t === dlg || t.closest('[data-pdp-close]')) dlg.close();
     else if (thumb) show(thumb.dataset.src);
     else if (chip) {
+      if (chip.disabled) return;
       size = chip.dataset.size;
-      dlg.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', c === chip));
-      $('pdpSizeLabel').textContent = size.replace(/^UK\s*/, '');
+      renderSizes();
       $('pdpError').textContent = '';
     } else if (t.closest('#pdpAdd')) {
       if (!size) { $('pdpError').textContent = 'Choose a size.'; return; }

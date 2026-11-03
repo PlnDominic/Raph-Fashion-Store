@@ -1,5 +1,6 @@
 // place-order: receives an order from the Mave Collection site, checks it, stores it and replies { reference }.
 //
+//   GET   -> { stock: { <product id>: { <size>: <qty left> } } }   what the shop shows as in stock / sold out
 //   POST multipart/form-data
 //     order   JSON  the order exactly as the site builds it (see js/shop.js and js/cart.js)
 //     photos  file  zero to five style-reference images (made-to-measure and custom orders)
@@ -38,7 +39,7 @@ const MEASUREMENTS: Record<string, [number, number]> = {
 const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') ?? '*';
 const cors = {
   'Access-Control-Allow-Origin': allowedOrigin,
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'content-type, authorization, apikey, x-client-info',
   'Vary': 'Origin',
 };
@@ -360,14 +361,27 @@ async function notifyTeam(
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
-  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
-
-  const length = Number(req.headers.get('content-length') ?? 0);
-  if (length > MAX_BODY_BYTES) return json({ error: 'That order is too large.' }, 413);
+  if (req.method !== 'POST' && req.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
 
   const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
     auth: { persistSession: false },
   });
+
+  // the shop asks what is in stock (a few seconds of caching keeps this cheap)
+  if (req.method === 'GET') {
+    const { data, error } = await supabase.from('product_stock').select('product_id,size,qty');
+    if (error) { console.error('stock read failed', error.message); return json({ error: 'Stock is not available' }, 500); }
+    const stock: Record<string, Record<string, number>> = {};
+    for (const r of (data ?? []) as Array<{ product_id: string; size: string; qty: number }>) {
+      (stock[r.product_id] ??= {})[r.size] = r.qty;
+    }
+    return new Response(JSON.stringify({ stock }), {
+      headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=10' },
+    });
+  }
+
+  const length = Number(req.headers.get('content-length') ?? 0);
+  if (length > MAX_BODY_BYTES) return json({ error: 'That order is too large.' }, 413);
 
   let form: FormData;
   try { form = await req.formData(); } catch { return json({ error: 'Could not read the order.' }, 400); }
@@ -430,8 +444,19 @@ Deno.serve(async (req: Request) => {
     },
   });
   if (error || !reference) {
-    console.error('place_order failed', error);
     if (paths.length) await supabase.storage.from('order-photos').remove(paths);
+    // the database refuses an order when a dress/size is gone: SOLD_OUT:<product id>|<size>
+    const sold = /SOLD_OUT:([^|]+)\|(.+)$/.exec(String(error?.message ?? ''));
+    if (sold) {
+      const name = order.items.find((i) => i.product_id === sold[1])?.product_name ?? 'That dress';
+      return json({
+        error: 'sold_out',
+        productId: sold[1],
+        size: sold[2],
+        message: `Sorry, ${name} in ${sold[2]} has just sold out. Please choose another size, or get it tailored to your measurements.`,
+      }, 409);
+    }
+    console.error('place_order failed', error);
     return json({ error: 'Something went wrong. Please try again.' }, 500);
   }
 

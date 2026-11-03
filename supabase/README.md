@@ -66,6 +66,23 @@ What the email contains: reference, order type and total, the customer's name, p
 
 If the free plan's sending limit is ever reached, orders keep working but emails stop; `notify_error` will say so. Check Resend's pricing page for the current limits.
 
+## 7. Stock and sizes for ready-made dresses
+
+Ready-made dresses are counted per size in the `product_stock` table (one row per dress per size, with a `qty`). The shop reads it, shows crossed-out sizes and a "Sold out" / "Last piece" badge, and the database takes stock off the moment an order is placed, so two people can never buy the same last piece. Made-to-measure and custom orders never touch stock.
+
+**Set it up (in this order, so the shop is never wrongly "sold out"):**
+1. **Run the stock SQL once:** SQL Editor → paste `supabase/migrations/20261104000000_stock.sql` → Run. It creates a row for every dress in UK 8, 10, 12, 14, 16, 18, 20 and 22, all at `0`.
+2. **Enter what you really have:** Table Editor → `product_stock` → change the `qty` numbers. Delete the rows for sizes you don't make (they would otherwise show as crossed-out "sold out" sizes). To add a size or a new dress, insert a row (`product_id` is the id from `js/products.js`).
+3. **Redeploy the function** (Edge Functions → your function → Code → paste the latest `supabase/functions/place-order/index.ts` → Deploy updates).
+
+**Day to day**
+- **Received more stock / made another one?** Raise its `qty` in the Table Editor. The shop updates within a few seconds.
+- **An order is cancelled?** Set the order's `status` to `cancelled` (Table Editor → `orders`). Its dresses go back in stock automatically. Changing it back from `cancelled` takes them off again (and is refused if that stock has been sold in the meantime).
+- **Unpaid orders hold stock** until they are cancelled, so cancel orders that will not be paid.
+- A customer who finds a size just sold out is told so and offered "Get it tailored".
+
+If the shop cannot load stock (old function, offline, no endpoint yet), every size is simply shown as available and the database still protects against overselling when the order is placed.
+
 ## Before you take real payments (Paystack)
 Prices are currently sent from the browser, and the function stores what it is sent. That is fine while the team confirms every order by phone, but **before online payment goes live the prices must live in the database** and the function must look them up itself, otherwise a customer could change a price. Do that in the same step as the Paystack integration.
 
