@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mave Admin</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://*.supabase.co data: blob:; connect-src 'self' https://*.supabase.co; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+  <meta name="referrer" content="no-referrer">
+  <link rel="icon" href="assets/brand/icon-64.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <!-- sign in -->
+  <main class="login" id="login">
+    <form class="login__card" id="loginForm" novalidate>
+      <img src="assets/brand/mave-logo.png" alt="" width="52" height="52">
+      <h1>Mave Admin</h1>
+      <p>Orders, fittings and stock.</p>
+      <label>Password
+        <input type="password" id="pw" autocomplete="current-password" autofocus>
+      </label>
+      <p class="err" id="loginErr" role="alert"></p>
+      <button class="btn" id="loginBtn">Sign in</button>
+    </form>
+  </main>
+
+  <!-- the dashboard -->
+  <div class="app" id="app" hidden>
+    <header class="bar">
+      <div class="bar__brand"><img src="assets/brand/mave-logo.png" alt="" width="30" height="30"><span>Mave <i>Admin</i></span></div>
+      <nav class="tabs" id="tabs" role="tablist">
+        <button role="tab" data-tab="orders" aria-selected="true">Orders</button>
+        <button role="tab" data-tab="fittings" aria-selected="false">Fittings</button>
+        <button role="tab" data-tab="stock" aria-selected="false">Stock</button>
+      </nav>
+      <div class="bar__end">
+        <button class="ghost" id="refresh" title="Reload">Refresh</button>
+        <button class="ghost" id="signout">Sign out</button>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section id="tab-orders">
+        <div class="stats" id="stats"></div>
+        <div class="filters">
+          <div class="chips" id="chips"></div>
+          <input class="search" id="search" type="search" placeholder="Search name, phone or reference" autocomplete="off">
+        </div>
+        <div class="list" id="orderList"></div>
+      </section>
+
+      <section id="tab-fittings" hidden>
+        <div class="panel" id="closures"></div>
+        <div id="fittingList"></div>
+      </section>
+
+      <section id="tab-stock" hidden>
+        <p class="note">Ready-made dresses by size. Changes save as you make them and show on the shop within seconds.</p>
+        <div id="stockList"></div>
+      </section>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+
+  <script src="js/products.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

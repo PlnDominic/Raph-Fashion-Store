@@ -112,6 +112,22 @@ Customers book a one-hour fitting from the "Order received" screen, from the "Go
 
 If the fittings SQL has not been run, the booking screen simply says it cannot load times and asks the customer to message you on WhatsApp.
 
+## 10. Admin dashboard (/admin.html)
+
+A private page for the team at `https://www.mavecollections.com/admin.html`: see every order, move it along (new, confirmed, cutting, sewing, ready, delivered), mark payments, set a price for "price to confirm" orders, read measurements and style photos, keep internal notes, manage fitting appointments (done, cancel, close a day) and edit stock.
+
+1. **Run the admin SQL once:** SQL Editor, paste `supabase/migrations/20261106000000_admin.sql`, Run. (It only records failed sign-in attempts.)
+2. **Redeploy the function** with the latest `supabase/functions/place-order/index.ts`.
+3. **Set the password:** Edge Functions, Secrets, add `ADMIN_PASSWORD` with a long passphrase (at least 12 characters, ideally four or five random words). Do not share it in chat or email. Until this secret exists, the dashboard refuses every sign-in.
+4. Open `/admin.html` and sign in. You stay signed in for 12 hours, in that browser tab only.
+
+**How it is protected**
+- Nothing in the page's code can read orders: every request must carry a token that only a correct password produces, and the token expires after 12 hours.
+- 6 wrong passwords from one address, or 40 overall, lock sign-in for 15 minutes.
+- The page is marked "noindex" so search engines skip it, and it only talks to your Supabase address.
+- To sign everyone out immediately, change `ADMIN_PASSWORD` (old tokens stop working).
+- Customers' text is shown as plain text, never as page code.
+
 ## Before you take real payments (Paystack)
 Prices are currently sent from the browser, and the function stores what it is sent. That is fine while the team confirms every order by phone, but **before online payment goes live the prices must live in the database** and the function must look them up itself, otherwise a customer could change a price. Do that in the same step as the Paystack integration.
 

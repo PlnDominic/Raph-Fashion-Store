@@ -523,6 +523,171 @@ async function handleFitting(
   return json({ ok: true, slot: new Date(f.slot).toISOString(), label: fittingWhen(f.slot), moved: f.moved });
 }
 
+// ---------- admin dashboard ----------
+// The team signs in at /admin.html with the password stored in the secret ADMIN_PASSWORD (at least 12 characters).
+// A correct password returns a token that expires after 12 hours; every other admin call must carry it.
+// Too many wrong passwords from one address (or too many overall) lock sign-in for 15 minutes.
+const ADMIN_TTL_MS = 12 * 3600_000;
+const ORDER_STATUSES = ['new', 'confirmed', 'cutting', 'sewing', 'ready', 'delivered', 'cancelled'];
+const PAYMENT_STATUSES = ['unpaid', 'paid', 'refunded'];
+const FITTING_STATUSES = ['booked', 'done', 'cancelled'];
+const enc = new TextEncoder();
+const b64u = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+async function hmac(key: string, msg: string): Promise<string> {
+  const k = await crypto.subtle.importKey('raw', enc.encode(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return b64u(await crypto.subtle.sign('HMAC', k, enc.encode(msg)));
+}
+function safeEqual(a: string, b: string) {
+  if (a.length !== b.length) return false;
+  let r = 0;
+  for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return r === 0;
+}
+const adminKey = (password: string) => password + '|' + (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
+
+async function handleAdmin(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  req: Request,
+) {
+  const password = Deno.env.get('ADMIN_PASSWORD') ?? '';
+  if (password.length < 12) {
+    return json({ error: 'not_set_up', message: 'The admin password has not been set up yet (secret ADMIN_PASSWORD, at least 12 characters).' }, 503);
+  }
+  if (Number(req.headers.get('content-length') ?? 0) > 20_000) return json({ error: 'Too large' }, 413);
+  // deno-lint-ignore no-explicit-any
+  let b: any;
+  try { b = await req.json(); } catch { return json({ error: 'Could not read the request.' }, 400); }
+  const action = String(b?.action ?? '');
+
+  // ---- sign in ----
+  if (action === 'admin_login') {
+    const ip = (req.headers.get('cf-connecting-ip') ?? req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown';
+    const since = new Date(Date.now() - 15 * 60_000).toISOString();
+    const [mine, all] = await Promise.all([
+      supabase.from('admin_login_attempts').select('id', { count: 'exact', head: true }).eq('ok', false).eq('ip', ip).gte('at', since),
+      supabase.from('admin_login_attempts').select('id', { count: 'exact', head: true }).eq('ok', false).gte('at', since),
+    ]);
+    if ((mine.count ?? 0) >= 6 || (all.count ?? 0) >= 40) {
+      return json({ error: 'locked', message: 'Too many wrong passwords. Please wait 15 minutes and try again.' }, 429);
+    }
+    const given = await hmac('login-check', String(b?.password ?? ''));
+    const real = await hmac('login-check', password);
+    const ok = safeEqual(given, real);
+    await supabase.from('admin_login_attempts').insert({ ip, ok });
+    if (!ok) {
+      await new Promise((r) => setTimeout(r, 600));
+      return json({ error: 'wrong', message: 'That password is not right.' }, 401);
+    }
+    const exp = Date.now() + ADMIN_TTL_MS;
+    return json({ token: `${exp}.${await hmac(adminKey(password), 'admin.' + exp)}`, expires: exp });
+  }
+
+  // ---- everything else needs a valid token ----
+  const [expStr, sig] = String(b?.token ?? '').split('.');
+  const exp = Number(expStr);
+  if (!sig || !isFinite(exp) || exp < Date.now() || !safeEqual(sig, await hmac(adminKey(password), 'admin.' + exp))) {
+    return json({ error: 'signed_out', message: 'Please sign in again.' }, 401);
+  }
+
+  const fail = (e: { message?: string } | null, what: string) => {
+    console.error('admin', what, e?.message);
+    return json({ error: 'Something went wrong. Please try again.' }, 500);
+  };
+
+  if (action === 'admin_orders') {
+    const { data, error } = await supabase.from('orders')
+      .select('id,reference,kind,status,payment_status,customer_name,customer_phone,delivery_address,need_by,notes,measurements_cm,total_ghs,internal_notes,created_at,notified_at,notify_error,order_items(product_id,product_name,size,qty,unit_price_ghs),order_photos(path)')
+      .order('created_at', { ascending: false }).limit(300);
+    if (error) return fail(error, 'orders');
+    // deno-lint-ignore no-explicit-any
+    const paths: string[] = (data ?? []).flatMap((o: any) => (o.order_photos ?? []).map((p: { path: string }) => p.path));
+    const urls: Record<string, string> = {};
+    if (paths.length) {
+      const { data: signed } = await supabase.storage.from('order-photos').createSignedUrls(paths, 3600);
+      for (const s of (signed ?? []) as Array<{ path?: string; signedUrl?: string }>) if (s.path && s.signedUrl) urls[s.path] = s.signedUrl;
+    }
+    // deno-lint-ignore no-explicit-any
+    const orders = (data ?? []).map((o: any) => ({ ...o, order_photos: undefined, photos: (o.order_photos ?? []).map((p: { path: string }) => urls[p.path]).filter(Boolean) }));
+    return json({ orders });
+  }
+
+  if (action === 'admin_update_order') {
+    const id = String(b?.id ?? '');
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return json({ error: 'Bad request' }, 400);
+    const patch: Record<string, unknown> = {};
+    if (b.status !== undefined) { if (!ORDER_STATUSES.includes(b.status)) return json({ error: 'Bad status' }, 400); patch.status = b.status; }
+    if (b.payment_status !== undefined) { if (!PAYMENT_STATUSES.includes(b.payment_status)) return json({ error: 'Bad payment status' }, 400); patch.payment_status = b.payment_status; }
+    if (b.internal_notes !== undefined) patch.internal_notes = String(b.internal_notes).slice(0, 2000);
+    if (b.total_ghs !== undefined) {
+      const t = b.total_ghs === null || b.total_ghs === '' ? null : Number(b.total_ghs);
+      if (t !== null && (!isFinite(t) || t < 0 || t > 1_000_000)) return json({ error: 'Bad total' }, 400);
+      patch.total_ghs = t;
+    }
+    if (Object.keys(patch).length === 0) return json({ error: 'Nothing to change' }, 400);
+    const { error } = await supabase.from('orders').update(patch).eq('id', id);
+    if (error) {
+      if (/product_stock|check constraint/i.test(error.message ?? '')) {
+        return json({ error: 'stock', message: 'That stock has been sold since this order was cancelled, so it cannot be re-opened.' }, 409);
+      }
+      return fail(error, 'update order');
+    }
+    return json({ ok: true });
+  }
+
+  if (action === 'admin_stock') {
+    const { data, error } = await supabase.from('product_stock').select('product_id,size,qty').order('product_id').order('size');
+    if (error) return fail(error, 'stock');
+    return json({ stock: data ?? [] });
+  }
+  if (action === 'admin_stock_set') {
+    const product_id = String(b?.product_id ?? '').slice(0, 80), size = String(b?.size ?? '').trim().slice(0, 20), qty = Number(b?.qty);
+    if (!product_id || !size || !Number.isInteger(qty) || qty < 0 || qty > 999) return json({ error: 'Bad stock value' }, 400);
+    const { error } = await supabase.from('product_stock').upsert({ product_id, size, qty }, { onConflict: 'product_id,size' });
+    if (error) return fail(error, 'stock set');
+    return json({ ok: true });
+  }
+  if (action === 'admin_stock_delete') {
+    const { error } = await supabase.from('product_stock').delete().eq('product_id', String(b?.product_id ?? '')).eq('size', String(b?.size ?? ''));
+    if (error) return fail(error, 'stock delete');
+    return json({ ok: true });
+  }
+
+  if (action === 'admin_fittings') {
+    const from = new Date(Date.now() - 7 * 86400_000).toISOString();
+    const { data, error } = await supabase.from('fittings').select('id,order_reference,customer_name,customer_phone,slot_start,status,notes,notified_at,notify_error')
+      .gte('slot_start', from).order('slot_start').limit(400);
+    if (error) return fail(error, 'fittings');
+    return json({ fittings: data ?? [] });
+  }
+  if (action === 'admin_fitting_update') {
+    const id = String(b?.id ?? '');
+    if (!/^[0-9a-f-]{36}$/i.test(id) || !FITTING_STATUSES.includes(b?.status)) return json({ error: 'Bad request' }, 400);
+    const { error } = await supabase.from('fittings').update({ status: b.status }).eq('id', id).neq('status', 'blocked');
+    if (error) {
+      if (/unique|duplicate/i.test(error.message ?? '')) return json({ error: 'taken', message: 'Someone else has that slot now.' }, 409);
+      return fail(error, 'fitting update');
+    }
+    return json({ ok: true });
+  }
+  if (action === 'admin_fitting_block' || action === 'admin_fitting_unblock') {
+    const date = String(b?.date ?? '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(Date.parse(date))) return json({ error: 'Bad date' }, 400);
+    if (action === 'admin_fitting_unblock') {
+      const { error } = await supabase.from('fittings').delete().eq('status', 'blocked').gte('slot_start', `${date}T00:00:00Z`).lte('slot_start', `${date}T23:59:59Z`);
+      if (error) return fail(error, 'unblock');
+      return json({ ok: true });
+    }
+    for (let h = FITTING_FIRST_HOUR; h <= FITTING_LAST_HOUR; h++) {
+      // a slot that is already booked is skipped (the unique index refuses it)
+      await supabase.from('fittings').insert({ slot_start: `${date}T${String(h).padStart(2, '0')}:00:00Z`, status: 'blocked' });
+    }
+    return json({ ok: true });
+  }
+
+  return json({ error: 'Unknown request' }, 400);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   if (req.method !== 'POST' && req.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
@@ -552,6 +717,9 @@ Deno.serve(async (req: Request) => {
       headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=10' },
     });
   }
+
+  // the admin dashboard talks JSON; customers' orders and fittings are multipart forms
+  if ((req.headers.get('content-type') ?? '').includes('application/json')) return await handleAdmin(supabase, req);
 
   const length = Number(req.headers.get('content-length') ?? 0);
   if (length > MAX_BODY_BYTES) return json({ error: 'That order is too large.' }, 413);
