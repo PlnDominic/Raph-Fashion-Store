@@ -98,7 +98,7 @@
     state.step = 0;
     state.files.forEach((f) => URL.revokeObjectURL(f.url));
     state.files = [];
-    form.reset();
+    form.reset();   // also clears the consent tick
     dialog.querySelectorAll('[data-key]').forEach((i) => { delete i.dataset.cm; });
     setUnit('cm', false);
     restoreDraft();
@@ -202,6 +202,12 @@
           return fail(`Check your ${f.label.toLowerCase()} (${lo}–${hi} ${state.unit}).`, inp);
         }
       }
+    }
+    $('#consentError').textContent = '';
+    if (step === 3 && !$('#consent').checked) {
+      $('#consentError').textContent = 'Please tick the box to continue.';   // shown right under the box
+      $('#consent').focus(); $('#consent').setAttribute('aria-invalid', 'true');
+      return false;
     }
     if (step === 2 && state.custom && state.files.length === 0) {
       return fail('Add at least one photo.', $('#refInput'));

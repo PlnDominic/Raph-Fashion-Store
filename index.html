@@ -86,6 +86,65 @@
       <div class="shop__grid" id="shopGrid" aria-live="polite"></div>
     </section>
 
+    <section class="info" id="info" aria-labelledby="info-title">
+      <div class="info__inner">
+        <div class="info__head">
+          <h2 id="info-title">Good to know</h2>
+          <p>How ordering, delivery, payment and fittings work at Mave Collection.</p>
+        </div>
+        <div class="info__list">
+          <details>
+            <summary>How ordering works</summary>
+            <div class="info__body">
+              <p><b>Ready-made dresses:</b> choose a size, add the dress to your cart and check out with your name, phone number and delivery address.</p>
+              <p><b>Made to measure and custom designs:</b> send us your measurements and, if you like, photos of the style you have in mind.</p>
+              <p>For every order we call or message you on WhatsApp to confirm the details, the price and the timing before anything is made or sent.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Delivery and pick-up</summary>
+            <div class="info__body">
+              <p>You can collect your dress from us in <b>Danfa, Accra</b>, or we can deliver it:</p>
+              <ul>
+                <li>within Accra and Tema,</li>
+                <li>by courier to other parts of Ghana, and</li>
+                <li>internationally, quoted for each order.</li>
+              </ul>
+              <p>The delivery fee depends on where you are. We tell you the amount when we confirm your order.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Payment</summary>
+            <div class="info__body">
+              <p><b>Ready-made dresses</b> are paid for in full.</p>
+              <p><b>Made-to-measure and custom dresses</b> start with a deposit, and the balance is paid before your dress is delivered or collected.</p>
+              <p>We confirm the amounts and how to pay when we contact you, so you never pay anything before we have spoken.</p>
+            </div>
+          </details>
+          <details>
+            <summary>How long it takes</summary>
+            <div class="info__body">
+              <p>Ready-made dresses are prepared once your order is confirmed. Made-to-measure timing depends on the dress and how much detail it has, so we confirm the time with you when we call, before you pay a deposit.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Fittings, exchanges and returns</summary>
+            <div class="info__body">
+              <p>Made-to-measure and custom dresses are made for one person, so they cannot be returned. If the fit is not right, we adjust it for you free of charge.</p>
+              <p>Ready-made dresses can be exchanged if they have not been worn.</p>
+              <p>Message us on WhatsApp as soon as you have tried your dress and we will arrange it.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Your measurements and photos</summary>
+            <div class="info__body">
+              <p>We use your measurements and style photos only to make your dress. They are kept in a private database that only our team can open. You can ask us to delete them at any time. Read our <a href="privacy.html">Privacy Notice</a>.</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <footer class="footer">
@@ -123,7 +182,7 @@
     </div>
 
     <div class="footer__bottom">
-      <p>&copy; <span id="year">2026</span> Mave Collection</p>
+      <p>&copy; <span id="year">2026</span> Mave Collection &middot; <a href="privacy.html">Privacy</a> &middot; <a href="#info">Delivery &amp; returns</a></p>
       <p>Developed by <a href="https://www.ecstasytechnologies.com" target="_blank" rel="noopener">Ecstasy Technologies</a></p>
     </div>
   </footer>
@@ -187,6 +246,8 @@
         <section data-step="3" hidden>
           <h4>Review</h4>
           <div id="review" class="review"></div>
+          <label class="consent"><input type="checkbox" id="consent"><span>I agree to the <a href="privacy.html" target="_blank" rel="noopener">Privacy Notice</a> and that Mave Collection may use my details, measurements and photos to make and deliver my order.</span></label>
+          <small class="err" id="consentError" role="alert"></small>
         </section>
 
         <section data-step="done" hidden>
@@ -243,6 +304,7 @@
             <button type="button" class="btn btn--ghost" id="pdpTailor" data-order="">Get it tailored</button>
           </div>
           <p class="err" id="pdpError" role="alert"></p>
+          <p class="pdp__more"><a href="#info" id="pdpInfo">Delivery, payment &amp; returns</a></p>
         </div>
       </div>
     </div>

@@ -17,7 +17,7 @@
 
   let cart = load();
   let view = 'list';                 // list | checkout | done
-  let details = { name: '', phone: '', address: '', notes: '' };
+  let details = { name: '', phone: '', address: '', notes: '', consent: false };
   let doneInfo = null;
   let notice = '';                   // why the cart changed (e.g. a size sold out); shown until the customer acts
 
@@ -111,6 +111,7 @@
       <label class="field">Phone / WhatsApp<input name="phone" type="tel" inputmode="tel" autocomplete="tel" value="${R.esc(details.phone)}"></label>
       <label class="field">Delivery address<input name="address" autocomplete="street-address" value="${R.esc(details.address)}"></label>
       <label class="field">Notes <span class="opt">(optional)</span><textarea name="notes" rows="2">${R.esc(details.notes)}</textarea></label>
+      <label class="consent"><input type="checkbox" name="consent"${details.consent ? ' checked' : ''}><span>I agree to the <a href="privacy.html" target="_blank" rel="noopener">Privacy Notice</a> and that Mave Collection may use my details to prepare and deliver my order.</span></label>
       <div class="cart__total"><span>Total</span><strong>${totalText()}</strong></div>`;
     foot.innerHTML = `
       <div class="cart__nav">
@@ -182,6 +183,8 @@
     if (!name.value.trim()) return setError('Enter your name.', name);
     if (phone.value.replace(/\D/g, '').length < 9) return setError('Enter a valid phone number.', phone);
     if (!address.value.trim()) return setError('Enter your delivery address.', address);
+    const consent = f.querySelector('[name=consent]');
+    if (!consent.checked) return setError('Please tick the box to continue.', consent);
 
     const order = {
       type: 'ready-made',
@@ -204,7 +207,7 @@
       return setError('Could not send. Check your connection and try again.');
     }
     doneInfo = { ref: order.reference, msg: `Thank you, ${order.customer.name.split(' ')[0]}. We'll call you on ${order.customer.phone} to confirm.` };
-    cart = []; save();
+    cart = []; details.consent = false; save();
     view = 'done'; render();
   }
 
@@ -235,7 +238,7 @@
     if (item) { item.size = e.target.value; notice = ''; save(); const er = document.getElementById('cartError'); if (er) er.textContent = ''; }
   });
   dialog.addEventListener('input', (e) => {
-    if (view === 'checkout' && e.target.name) details[e.target.name] = e.target.value;
+    if (view === 'checkout' && e.target.name) details[e.target.name] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
   });
 
   if (S) S.onChange(() => { if (dialog.open && view === 'list') { reconcile(); renderList(); } });

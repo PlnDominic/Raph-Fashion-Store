@@ -98,6 +98,7 @@
     const thumb = t.closest('.pdp__thumb');
     const chip = t.closest('.chip');
     if (t === dlg || t.closest('[data-pdp-close]')) dlg.close();
+    else if (t.closest('#pdpInfo')) { e.preventDefault(); dlg.close(); document.getElementById('info').scrollIntoView({ behavior: 'smooth' }); }
     else if (thumb) show(thumb.dataset.src);
     else if (chip) {
       if (chip.disabled) return;
