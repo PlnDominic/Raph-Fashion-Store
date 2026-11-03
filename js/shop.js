@@ -265,16 +265,42 @@
     const meas = MEASUREMENTS.map((m) => {
       const c = o.measurementsCm[m.key];
       if (c == null) return '';
-      return `<div><dt>${m.label}</dt><dd>${show(c)} in</dd></div>`;
+      return `<div><dt>${m.label}</dt><dd>${show(c)}</dd></div>`;
     }).join('');
+    const img = state.product && state.product.images ? state.product.images[0] : null;
+    const kind = state.custom ? 'Your own design' : 'Made to measure';
+    const edit = (n) => `<button type="button" class="rv__edit" data-goto="${n}">Edit</button>`;
+    const thumbs = state.files.slice(0, 5).map((f) => `<img src="${f.url}" alt="">`).join('');
     $('#review').innerHTML = `
-      <div class="review__block"><h5>${esc(o.product.name)}</h5>
-        <p>${o.product.price != null ? money(o.product.price) : 'Price confirmed by phone'}</p></div>
-      <div class="review__block"><h5>You</h5>
-        <p>${esc(o.customer.name)}<br>${esc(o.customer.phone)}<br>${esc(o.customer.address)}${o.customer.needBy ? '<br>Needed by ' + esc(o.customer.needBy) : ''}</p></div>
-      <div class="review__block"><h5>Measurements</h5><dl class="review__meas">${meas}</dl></div>
-      <div class="review__block"><h5>Style</h5>
-        <p>${o.notes ? esc(o.notes) + '<br>' : ''}${o.photos} photo${o.photos === 1 ? '' : 's'}</p></div>`;
+      <div class="rv__lead">
+        ${img ? `<img class="rv__img" src="${img}" alt="">` : '<span class="rv__img rv__img--blank" aria-hidden="true"></span>'}
+        <div>
+          <p class="rv__kind">${kind}</p>
+          <p class="rv__name">${esc(o.product.name)}</p>
+          <p class="rv__price">${o.product.price != null ? money(o.product.price) : 'Price confirmed by phone'}</p>
+        </div>
+      </div>
+
+      <section class="rv__sec">
+        <header><h5>Your details</h5>${edit(0)}</header>
+        <dl class="rv__rows">
+          <div><dt>Name</dt><dd>${esc(o.customer.name)}</dd></div>
+          <div><dt>Phone</dt><dd>${esc(o.customer.phone)}</dd></div>
+          <div><dt>Address</dt><dd>${esc(o.customer.address)}</dd></div>
+          ${o.customer.needBy ? `<div><dt>Needed by</dt><dd>${esc(o.customer.needBy)}</dd></div>` : ''}
+        </dl>
+      </section>
+
+      <section class="rv__sec">
+        <header><h5>Measurements <i>inches</i></h5>${edit(1)}</header>
+        <dl class="rv__meas">${meas}</dl>
+      </section>
+
+      <section class="rv__sec">
+        <header><h5>Style</h5>${edit(2)}</header>
+        ${o.notes ? `<p class="rv__note">${esc(o.notes)}</p>` : ''}
+        ${thumbs ? `<div class="rv__thumbs">${thumbs}</div>` : `<p class="rv__note">No photos added</p>`}
+      </section>`;
   }
 
   // Sends a finished order and resolves with the server's reply ({ reference }), or null when there is
@@ -367,6 +393,7 @@
     if (!validate(state.step)) return;
     if (state.step === 3) submit(); else showStep(state.step + 1);
   });
+  $('#review').addEventListener('click', (e) => { const b = e.target.closest('[data-goto]'); if (b) showStep(Number(b.dataset.goto)); });
   form.addEventListener('submit', (e) => { e.preventDefault(); nextBtn.click(); });
   form.addEventListener('input', (e) => {
     const inp = e.target.closest('[data-key]');
