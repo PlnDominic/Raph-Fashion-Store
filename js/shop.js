@@ -15,19 +15,24 @@
   const pad = (n) => String(n).padStart(4, '0');
   const money = (n) => `${config.currency || 'GHS'} ${Number(n).toLocaleString('en-GH')}`;
 
+  // Ghanaian tailors work in inches, so the form does too. Ranges are in inches.
+  // Values are still stored in cm (exact, no drift) by the order function.
   const MEASUREMENTS = [
-    { key: 'height',        label: 'Height',                hint: 'Standing straight, without shoes',                  min: 120, max: 220 },
-    { key: 'bust',          label: 'Bust',                  hint: 'Around the fullest part of your chest',            min: 60,  max: 180 },
-    { key: 'underbust',     label: 'Underbust',             hint: 'Around your ribcage, just under the bust',         min: 50,  max: 160 },
-    { key: 'waist',         label: 'Waist',                 hint: 'Around your natural waist, the narrowest part',    min: 45,  max: 170 },
-    { key: 'hips',          label: 'Hips',                  hint: 'Around the fullest part of your hips',             min: 60,  max: 200 },
-    { key: 'shoulder',      label: 'Shoulder width',        hint: 'Across the back, from one shoulder point to the other', min: 25, max: 60 },
-    { key: 'shoulderWaist', label: 'Shoulder to waist',     hint: 'From the top of the shoulder down to your waist',  min: 25,  max: 60 },
-    { key: 'dressLength',   label: 'Dress length',          hint: 'From the top of the shoulder to where you want the hem', min: 80, max: 220 },
-    { key: 'upperArm',      label: 'Upper arm',             hint: 'Around the fullest part of your upper arm',        min: 15,  max: 60 },
+    { key: 'bust',          label: 'Bust',              hint: 'Around the fullest part of your chest',                  min: 24, max: 70 },
+    { key: 'underbust',     label: 'Underbust',         hint: 'Around your ribcage, just under the bust',               min: 20, max: 63 },
+    { key: 'waist',         label: 'Waist',             hint: 'Around your natural waist, the narrowest part',          min: 18, max: 67 },
+    { key: 'hips',          label: 'Hips',              hint: 'Around the fullest part of your hips',                   min: 24, max: 79 },
+    { key: 'shoulder',      label: 'Shoulder',          hint: 'Across the back, from one shoulder point to the other',  min: 10, max: 24 },
+    { key: 'bustPoint',     label: 'Bust point',        hint: 'Nipple to nipple, straight across',                      min: 3,  max: 14, optional: true },
+    { key: 'shoulderWaist', label: 'Shoulder to waist', hint: 'From the top of the shoulder, over the bust, down to your waist', min: 10, max: 24 },
+    { key: 'sleeveLength',  label: 'Sleeve length',     hint: 'From the shoulder point to where you want the sleeve to end', min: 4, max: 28, optional: true },
+    { key: 'upperArm',      label: 'Round arm',         hint: 'Around the fullest part of your upper arm',              min: 6,  max: 24 },
+    { key: 'dressLength',   label: 'Full length',       hint: 'From the top of the shoulder to where you want the hem', min: 31, max: 87 },
+    { key: 'height',        label: 'Height',            hint: 'Standing straight, without shoes',                       min: 47, max: 87 },
   ];
+  const IN = 2.54;
 
-  const state = { product: null, step: 0, unit: 'cm', files: [] };
+  const state = { product: null, step: 0, unit: 'in', files: [] };
   const STEP_NAMES = ['Details', 'Measure', 'Style', 'Review'];
 
   // ---------- shop grid ----------
@@ -101,7 +106,6 @@
     state.files = [];
     form.reset();   // also clears the consent tick
     dialog.querySelectorAll('[data-key]').forEach((i) => { delete i.dataset.cm; });
-    setUnit('cm', false);
     restoreDraft();
     renderThumbs();
     $('#orderTitle').textContent = isCustom ? 'Your own design' : state.product.name;
@@ -136,35 +140,21 @@
   function buildMeasureFields() {
     $('#measureFields').innerHTML = MEASUREMENTS.map((m) => `
       <label class="field" title="${m.hint}">${m.label}
-        <span class="unitwrap"><input name="m_${m.key}" type="number" inputmode="decimal" step="0.1" min="0" data-key="${m.key}" required><i class="unit">cm</i></span>
+        <span class="unitwrap"><input name="m_${m.key}" type="number" inputmode="decimal" step="0.25" min="0" data-key="${m.key}" ${m.optional ? '' : 'required'}><i class="unit">in</i></span>
       </label>`).join('');
   }
 
-  const toCm = (v) => (state.unit === 'in' ? v * 2.54 : v);
+  const toCm = (v) => v * IN;
   const round1 = (v) => Math.round(v * 10) / 10;
+  const quarter = (v) => Math.round(v * 4) / 4;
 
-  // Each measurement input keeps its exact value in cm (dataset.cm), so switching cm <-> in
-  // never drifts. The visible number is just a rounded view of it.
-  const show = (cm, unit) => round1(unit === 'in' ? cm / 2.54 : cm);
+  // Each input keeps its exact value in cm (dataset.cm); the visible number is inches to the nearest quarter.
+  const show = (cm) => quarter(cm / IN);
 
   function setCm(inp, cm) {
     if (cm == null || isNaN(cm)) { delete inp.dataset.cm; inp.value = ''; return; }
     inp.dataset.cm = cm;
-    inp.value = show(cm, state.unit);
-  }
-
-  // convert=true: the user toggled the unit, so re-express what they've typed.
-  // convert=false: just reset the labels (used when the dialog opens or a draft is restored).
-  function setUnit(unit, convert = true) {
-    if (convert && unit === state.unit) return;
-    state.unit = unit;
-    if (convert) dialog.querySelectorAll('[data-key]').forEach((inp) => { if (inp.dataset.cm) inp.value = show(Number(inp.dataset.cm), unit); });
-    dialog.querySelectorAll('.unit').forEach((u) => { u.textContent = unit; });
-    dialog.querySelectorAll('[data-unit]').forEach((b) => {
-      const on = b.dataset.unit === unit;
-      b.classList.toggle('is-on', on);
-      b.setAttribute('aria-pressed', on);
-    });
+    inp.value = show(cm);
   }
 
   function readMeasurements() {
@@ -196,12 +186,9 @@
       const m = readMeasurements();
       for (const f of MEASUREMENTS) {
         const inp = $(`[data-key="${f.key}"]`);
-        if (m[f.key] == null) return fail(`Enter your ${f.label.toLowerCase()}.`, inp);
-        if (m[f.key] < f.min || m[f.key] > f.max) {
-          const lo = state.unit === 'in' ? round1(f.min / 2.54) : f.min;
-          const hi = state.unit === 'in' ? round1(f.max / 2.54) : f.max;
-          return fail(`Check your ${f.label.toLowerCase()} (${lo}–${hi} ${state.unit}).`, inp);
-        }
+        if (m[f.key] == null) { if (f.optional) continue; return fail(`Enter your ${f.label.toLowerCase()}.`, inp); }
+        const v = show(m[f.key]);
+        if (v < f.min || v > f.max) return fail(`Check your ${f.label.toLowerCase()} (${f.min}–${f.max} in).`, inp);
       }
     }
     $('#consentError').textContent = '';
@@ -275,8 +262,9 @@
   function renderReview() {
     const o = collect();
     const meas = MEASUREMENTS.map((m) => {
-      const v = state.unit === 'in' ? round1(o.measurementsCm[m.key] / 2.54) : o.measurementsCm[m.key];
-      return `<div><dt>${m.label}</dt><dd>${v} ${state.unit}</dd></div>`;
+      const c = o.measurementsCm[m.key];
+      if (c == null) return '';
+      return `<div><dt>${m.label}</dt><dd>${show(c)} in</dd></div>`;
     }).join('');
     $('#review').innerHTML = `
       <div class="review__block"><h5>${esc(o.product.name)}</h5>
@@ -342,7 +330,7 @@
   const DRAFT = 'raph_draft';
   function saveDraft() {
     try {
-      const d = { unit: state.unit, f: {} };
+      const d = { f: {} };
       ['name', 'phone', 'address', 'needBy', 'notes'].forEach((k) => { d.f[k] = form.elements[k].value; });
       d.m = {}; dialog.querySelectorAll('[data-key]').forEach((i) => { if (i.dataset.cm) d.m[i.dataset.key] = Number(i.dataset.cm); });
       localStorage.setItem(DRAFT, JSON.stringify(d));
@@ -351,8 +339,7 @@
   function restoreDraft() {
     try {
       const d = JSON.parse(localStorage.getItem(DRAFT) || 'null'); if (!d) return;
-      setUnit(d.unit || 'cm', false);
-      Object.entries(d.f || {}).forEach(([k, v]) => { form.elements[k].value = v; });
+            Object.entries(d.f || {}).forEach(([k, v]) => { form.elements[k].value = v; });
       Object.entries(d.m || {}).forEach(([k, v]) => { const i = $(`[data-key="${k}"]`); if (i) setCm(i, v); });
     } catch (e) { /* ignore */ }
   }
@@ -385,7 +372,6 @@
     if (inp) { const v = parseFloat(inp.value); if (isNaN(v)) delete inp.dataset.cm; else inp.dataset.cm = toCm(v); }
     saveDraft(); if (state.step === 1) softWarnings();
   });
-  dialog.querySelectorAll('[data-unit]').forEach((b) => b.addEventListener('click', () => { setUnit(b.dataset.unit); saveDraft(); if (state.step === 1) softWarnings(); }));
   $('#refInput').addEventListener('change', (e) => { addFiles([...e.target.files]); e.target.value = ''; });
   $('#thumbs').addEventListener('click', (e) => {
     const b = e.target.closest('[data-rm]'); if (!b) return;

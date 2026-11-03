@@ -62,7 +62,7 @@ The function sends the email itself through [Resend](https://resend.com) (a web 
 
 **Resend's shared sender** (`onboarding@resend.dev`) can only deliver to the address you signed up with, which is fine for getting started. To send from your own address (e.g. `orders@mavecollections.com`) and to more recipients: Resend → **Domains → Add domain** `mavecollections.com`, add the DNS records Resend shows you at your domain provider, wait for "Verified", then add the secret `NOTIFY_FROM` = `Mave Collection <orders@mavecollections.com>`.
 
-What the email contains: reference, order type and total, the customer's name, phone (tap to call, plus a "Message on WhatsApp" link), address and needed-by date, the dresses and sizes, notes, all nine measurements (cm and inches) and links to the style photos (private; the links work for 7 days).
+What the email contains: reference, order type and total, the customer's name, phone (tap to call, plus a "Message on WhatsApp" link), address and needed-by date, the dresses and sizes, notes, the measurements (in inches) and links to the style photos (private; the links work for 7 days).
 
 If the free plan's sending limit is ever reached, orders keep working but emails stop; `notify_error` will say so. Check Resend's pricing page for the current limits.
 

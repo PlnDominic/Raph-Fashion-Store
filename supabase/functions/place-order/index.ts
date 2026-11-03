@@ -25,7 +25,7 @@ const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 const MAX_BODY_BYTES = 30 * 1024 * 1024;
 const MAX_ORDERS_PER_PHONE_PER_HOUR = 5;
 
-// same ranges as the order form (cm)
+// ranges in cm (the order form works in inches and converts)
 const MEASUREMENTS: Record<string, [number, number]> = {
   height: [120, 220],
   bust: [60, 180],
@@ -36,7 +36,10 @@ const MEASUREMENTS: Record<string, [number, number]> = {
   shoulderWaist: [25, 60],
   dressLength: [80, 220],
   upperArm: [15, 60],
+  bustPoint: [8, 36],      // optional
+  sleeveLength: [10, 72],  // optional
 };
+const OPTIONAL_MEASUREMENTS = new Set(['bustPoint', 'sleeveLength']);
 
 const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') ?? '*';
 const cors = {
@@ -123,7 +126,8 @@ function validate(o: any) {
     measurements_cm = {};
     for (const [key, [lo, hi]] of Object.entries(MEASUREMENTS)) {
       const v = m[key];
-      if (typeof v !== 'number' || !isFinite(v) || v < lo || v > hi) bad(`${key} should be between ${lo} and ${hi} cm`);
+      if ((v == null) && OPTIONAL_MEASUREMENTS.has(key)) continue;
+      if (typeof v !== 'number' || !isFinite(v) || v < lo || v > hi) bad(`${key} should be between ${Math.round(lo / 2.54)} and ${Math.round(hi / 2.54)} inches`);
       measurements_cm[key] = Math.round(v * 10) / 10;
     }
   }
@@ -157,7 +161,8 @@ async function verifyTurnstile(secret: string, token: string, ip: string | null)
 const KINDS: Record<string, string> = { 'ready-made': 'Ready-made', 'made-to-measure': 'Made to measure', 'custom': 'Custom design' };
 const LABELS: Record<string, string> = {
   height: 'Height', bust: 'Bust', underbust: 'Underbust', waist: 'Waist', hips: 'Hips',
-  shoulder: 'Shoulder width', shoulderWaist: 'Shoulder to waist', dressLength: 'Dress length', upperArm: 'Upper arm',
+  shoulder: 'Shoulder', shoulderWaist: 'Shoulder to waist', dressLength: 'Full length', upperArm: 'Round arm',
+  bustPoint: 'Bust point', sleeveLength: 'Sleeve length',
 };
 
 const esc = (v: unknown) =>
@@ -204,7 +209,7 @@ function buildEmail(reference: string, o: ReturnType<typeof validate>, photos: s
     price: ghs(i.unit_price_ghs as number | null),
   }));
   const meas = o.measurements_cm
-    ? Object.entries(o.measurements_cm).map(([k, v]) => ({ label: LABELS[k] ?? k, cm: v, inch: Math.round((v / 2.54) * 10) / 10 }))
+    ? Object.entries(o.measurements_cm).map(([k, v]) => ({ label: LABELS[k] ?? k, inch: Math.round((v / 2.54) * 4) / 4 }))
     : [];
   const links = photos.map(safeUrl).filter((u): u is string => !!u);
 
@@ -226,7 +231,7 @@ function buildEmail(reference: string, o: ReturnType<typeof validate>, photos: s
     ...items.map((i) => `  ${i.name}${i.detail ? ` (${i.detail})` : ''}${i.price ? ` - ${i.price}` : ''}`),
     `  Total: ${total ?? 'to be confirmed'}`,
     o.notes ? `\nTheir note\n  ${o.notes}` : '',
-    meas.length ? '\nMeasurements\n' + meas.map((m) => `  ${m.label}: ${m.cm} cm (${m.inch} in)`).join('\n') : '',
+    meas.length ? '\nMeasurements\n' + meas.map((m) => `  ${m.label}: ${m.inch} in`).join('\n') : '',
     links.length ? '\nStyle photos (links work for 7 days)\n' + links.map((u, n) => `  ${n + 1}. ${u}`).join('\n') : '',
     '',
     'Mave Collection, Danfa, Accra',
@@ -295,7 +300,7 @@ function buildEmail(reference: string, o: ReturnType<typeof validate>, photos: s
   ${o.notes ? block(`${h2('Their note')}<div style="font:15px/1.6 ${SANS};color:${INK};white-space:pre-wrap">${esc(o.notes)}</div>`) : ''}
 
   ${meas.length ? block(`${h2('Measurements')}
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${meas.map((m, n) => line(esc(m.label), `${m.cm} cm <span style="color:${MUTED}">&nbsp;${m.inch} in</span>`, n === meas.length - 1)).join('')}</table>`) : ''}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${meas.map((m, n) => line(esc(m.label), `${m.inch} in`, n === meas.length - 1)).join('')}</table>`) : ''}
 
   ${links.length ? block(`${h2('Style photos')}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${photoRows.join('')}</table>

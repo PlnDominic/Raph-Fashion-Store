@@ -243,3 +243,5 @@ body:has(dialog[open]) { overflow: hidden; }
 
 .captcha:empty { display: none; }
 .captcha { margin: 14px 0 0; }
+
+.unitnote { font-size: 0.8rem; color: var(--muted); }
