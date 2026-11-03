@@ -128,7 +128,7 @@
     stepsEl.hidden = done;
     if (!done) {
       stepsEl.innerHTML = STEP_NAMES.map((name, i) =>
-        `<li class="${i === n ? 'is-now' : i < n ? 'is-done' : ''}"><i></i><b>${name}</b></li>`).join('');
+        `<li class="${i === n ? 'is-now' : i < n ? 'is-done' : ''}"><i>${i < n ? '<svg viewBox="0 0 12 12" width="11" height="11"><path d="M2 6.5l2.6 2.6L10 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' : i + 1}</i><b>${name}</b></li>`).join('');
       backBtn.style.visibility = n === 0 ? 'hidden' : 'visible';
       nextBtn.textContent = n === 3 ? 'Place order' : 'Next';
       if (n === 3) renderReview();
@@ -154,22 +154,25 @@
     height:        'Stand straight against a wall, without shoes.',
   };
   const MARK = {
-    bust:          '<path d="M33 80h54"/><circle cx="33" cy="80" r="2.6"/><circle cx="87" cy="80" r="2.6"/>',
-    underbust:     '<path d="M38 91h44"/><circle cx="38" cy="91" r="2.6"/><circle cx="82" cy="91" r="2.6"/>',
-    waist:         '<path d="M42 108h36"/><circle cx="42" cy="108" r="2.6"/><circle cx="78" cy="108" r="2.6"/>',
-    hips:          '<path d="M30 134h60"/><circle cx="30" cy="134" r="2.6"/><circle cx="90" cy="134" r="2.6"/>',
-    shoulder:      '<path d="M37 52h46"/><circle cx="37" cy="52" r="2.6"/><circle cx="83" cy="52" r="2.6"/>',
-    bustPoint:     '<path d="M50 80h20"/><circle cx="50" cy="80" r="2.6"/><circle cx="70" cy="80" r="2.6"/>',
-    shoulderWaist: '<path d="M47 51 52 80 47 108"/><circle cx="47" cy="51" r="2.6"/><circle cx="47" cy="108" r="2.6"/>',
-    sleeveLength:  '<path d="M36 54Q25 84 23 120"/><circle cx="36" cy="54" r="2.6"/><circle cx="23" cy="120" r="2.6"/>',
-    upperArm:      '<ellipse cx="29" cy="82" rx="8" ry="3.2"/>',
-    dressLength:   '<path d="M60 52v174" stroke-dasharray="4 3"/><circle cx="60" cy="52" r="2.6"/><circle cx="60" cy="226" r="2.6"/>',
-    height:        '<path d="M108 12v214"/><path d="M103 12h10M103 226h10"/>',
+    bust:          '<path d="M37 77Q60 83 83 77"/><circle cx="37" cy="77" r="2.4"/><circle cx="83" cy="77" r="2.4"/>',
+    underbust:     '<path d="M40 90Q60 96 80 90"/><circle cx="40" cy="90" r="2.4"/><circle cx="80" cy="90" r="2.4"/>',
+    waist:         '<path d="M46 108Q60 114 74 108"/><circle cx="46" cy="108" r="2.4"/><circle cx="74" cy="108" r="2.4"/>',
+    hips:          '<path d="M35 138Q60 145 85 138"/><circle cx="35" cy="138" r="2.4"/><circle cx="85" cy="138" r="2.4"/>',
+    shoulder:      '<path d="M37 49Q60 44 83 49"/><circle cx="37" cy="49" r="2.4"/><circle cx="83" cy="49" r="2.4"/>',
+    bustPoint:     '<path d="M51 78h18"/><circle cx="51" cy="78" r="2.4"/><circle cx="69" cy="78" r="2.4"/>',
+    shoulderWaist: '<path d="M46 45Q51 76 47 108"/><circle cx="46" cy="45" r="2.4"/><circle cx="47" cy="108" r="2.4"/>',
+    sleeveLength:  '<path d="M38 49Q27 70 25 104L25 126"/><circle cx="38" cy="49" r="2.4"/><circle cx="25" cy="126" r="2.4"/>',
+    upperArm:      '<ellipse cx="30" cy="80" rx="6.5" ry="3"/>',
+    dressLength:   '<path d="M60 46V238" stroke-dasharray="4 3.5"/><circle cx="60" cy="46" r="2.4"/><circle cx="60" cy="238" r="2.4"/>',
+    height:        '<path d="M110 10V240"/><path d="M105 10h10M105 240h10"/>',
   };
-  const FIGURE = '<path class="fig" d="M38 52h44q4 14 0 28-6 16-8 28 6 12 10 26l8 92H28l8-92q4-14 10-26-2-12-8-28-4-14 0-28Z"/>' +
-    '<path class="fig" d="M36 54Q24 84 22 120l8 1q2-34 12-60Z"/><path class="fig" d="M84 54Q96 84 98 120l-8 1q-2-34-12-60Z"/>' +
-    '<path class="fig" d="M54 40v12M66 40v12"/><circle class="fig" cx="60" cy="26" r="14"/>';
-  const diagram = (key) => `<svg viewBox="0 0 120 240" width="52" height="104" aria-hidden="true">${FIGURE}<g class="mk">${MARK[key] || ''}</g></svg>`;
+  const FIGURE =
+    '<path class="fig" d="M38 48Q27 70 25 104L24 128Q28 130 31 128L33 104Q35 76 44 56Z"/>' +
+    '<path class="fig" d="M82 48Q93 70 95 104L96 128Q92 130 89 128L87 104Q85 76 76 56Z"/>' +
+    '<path class="fig" d="M55 40Q46 41 38 48Q36 62 40 76Q40 86 44 94Q48 104 47 112Q40 124 36 138Q36 160 41 190L43 238H56L58 160L60 152L62 160L64 238H77L79 190Q84 160 84 138Q80 124 73 112Q72 104 76 94Q80 86 80 76Q84 62 82 48Q74 41 65 40Z"/>' +
+    '<path class="fig" d="M55 30v11M65 30v11"/><ellipse class="fig" cx="60" cy="20" rx="10" ry="12"/>' +
+    '<circle class="hair" cx="60" cy="6" r="6.5"/><path class="hair" d="M49.5 20Q48 5 60 6Q72 5 70.5 20Q66 12 60 12Q54 12 49.5 20Z"/>';
+  const diagram = (key) => `<svg viewBox="0 0 120 250" width="60" height="125" aria-hidden="true">${FIGURE}<g class="halo">${MARK[key] || ''}</g><g class="mk">${MARK[key] || ''}</g></svg>`;
 
   function showGuide(key) {
     const m = MEASUREMENTS.find((x) => x.key === key) || MEASUREMENTS[0];
@@ -437,6 +440,7 @@
     if (state.step === 3) submit(); else showStep(state.step + 1);
   });
   $('#review').addEventListener('click', (e) => { const b = e.target.closest('[data-goto]'); if (b) showStep(Number(b.dataset.goto)); });
+  stepsEl.addEventListener('click', (e) => { const li = e.target.closest('li.is-done'); if (li) showStep([...stepsEl.children].indexOf(li)); });
   $('#measureFields').addEventListener('focusin', (e) => { const i = e.target.closest('[data-key]'); if (i) showGuide(i.dataset.key); });
   form.addEventListener('submit', (e) => { e.preventDefault(); nextBtn.click(); });
   form.addEventListener('input', (e) => {

@@ -424,3 +424,53 @@ body:has(dialog[open]) { overflow: hidden; }
 .unitwrap input { -moz-appearance: textfield; appearance: textfield; }
 .mguide svg { width: 60px; height: 120px; }
 @media (max-width: 700px) { .mguide svg { width: 54px; height: 108px; } .mguide { min-height: 126px; } }
+
+/* ---- steps: connected circles ---- */
+.order__steps { padding: 6px 28px 16px; gap: 0; }
+.order__steps li { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; text-align: center; font-size: 0; }
+.order__steps li::before { content: ""; position: absolute; top: 13px; right: 50%; width: 100%; height: 2px; background: rgba(12, 57, 37, 0.14); }
+.order__steps li:first-child::before { display: none; }
+.order__steps li.is-done::before, .order__steps li.is-now::before { background: var(--glow); }
+.order__steps li i {
+  position: relative; z-index: 1; display: grid; place-items: center; width: 28px; height: 28px; height: 28px; border-radius: 50%;
+  background: #fff; border: 1.5px solid rgba(12, 57, 37, 0.2); color: var(--muted); font-style: normal; font-size: 0.76rem; font-weight: 500; transition: all 0.25s;
+}
+.order__steps li.is-done i { background: var(--glow); border-color: var(--glow); color: #fff; }
+.order__steps li.is-now i { border-color: var(--glow); color: var(--ember); box-shadow: 0 0 0 4px rgba(12, 57, 37, 0.1); }
+.order__steps li.is-done { cursor: pointer; }
+.order__steps li b { display: block; font-size: 0.64rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.order__steps li.is-now b { color: var(--ember); }
+@media (max-width: 700px) {
+  .order__steps { padding: 4px 16px 12px; }
+  .order__steps li, .order__steps .is-now { flex: 1; }
+  .order__steps li b, .order__steps .is-now b { display: block; font-size: 0.58rem; letter-spacing: 0.1em; }
+}
+
+/* ---- compact form controls ---- */
+.field { margin-bottom: 12px; font-size: 0.68rem; letter-spacing: 0.08em; }
+.field input, .field textarea { margin-top: 5px; padding: 9px 12px; border-radius: 10px; }
+.field textarea { padding: 10px 12px; }
+.order__body { padding: 18px 28px; }
+.order__body h4 { font-size: 1.25rem; margin-bottom: 12px; }
+.measure { grid-template-columns: repeat(3, 1fr); gap: 0 12px; }
+.unit { right: 11px; font-size: 0.74rem; }
+.unitwrap input { padding-right: 32px; }
+.drop { padding: 20px 14px; }
+@media (max-width: 700px) {
+  .order__body { padding: 16px 20px; }
+  .measure { grid-template-columns: 1fr 1fr; gap: 0 10px; }
+}
+
+/* ---- guide card refresh ---- */
+.mguide { min-height: 0; padding: 10px 14px; background: linear-gradient(135deg, #f3f7f4, #fbfcfb); }
+.mguide .fig { fill: #fff; stroke: rgba(12, 57, 37, 0.38); stroke-width: 1.2; }
+.mguide .hair { fill: var(--ember); stroke: none; }
+.mguide .halo { fill: none; stroke: #fff; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+.mguide .halo ellipse, .mguide .halo path { fill: none; }
+.mguide .halo circle { fill: #fff; stroke: #fff; }
+.mguide svg { width: 56px; height: 117px; }
+@media (max-width: 700px) { .mguide { min-height: 0; } .mguide svg { width: 50px; height: 104px; } }
+.order__steps li.is-now i { background: #fff; color: var(--ember); }
+.order__steps li.is-done i { background: var(--glow); }
+.mguide svg { width: 64px; height: 133px; }
+@media (max-width: 700px) { .mguide svg { width: 56px; height: 117px; } }
