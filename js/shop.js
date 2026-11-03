@@ -138,12 +138,54 @@
     if (first && n !== 3 && n !== 'done') first.focus({ preventScroll: true });
   }
 
+  // ---------- how-to-measure guide ----------
+  // One small figure, with the measured line drawn on it. The panel above the fields follows whichever box is active.
+  const TIPS = {
+    bust:          'Level around the fullest part of your chest, under the arms. Snug, not tight.',
+    underbust:     'Just under the bust, where a bra band sits.',
+    waist:         'The narrowest part of your torso, usually just above the belly button.',
+    hips:          'Around the fullest part of your hips and bottom, feet together.',
+    shoulder:      'Across your back, from the tip of one shoulder to the other.',
+    bustPoint:     'Straight across from one nipple to the other.',
+    shoulderWaist: 'From the top of your shoulder, over the bust, down to your waist.',
+    sleeveLength:  'From the shoulder tip to where you want the sleeve to end. Arm slightly bent.',
+    upperArm:      'Around the fullest part of your upper arm, relaxed.',
+    dressLength:   'From the top of your shoulder to where you want the hem. Stand in the shoes you will wear.',
+    height:        'Stand straight against a wall, without shoes.',
+  };
+  const MARK = {
+    bust:          '<path d="M33 80h54"/><circle cx="33" cy="80" r="2.6"/><circle cx="87" cy="80" r="2.6"/>',
+    underbust:     '<path d="M38 91h44"/><circle cx="38" cy="91" r="2.6"/><circle cx="82" cy="91" r="2.6"/>',
+    waist:         '<path d="M42 108h36"/><circle cx="42" cy="108" r="2.6"/><circle cx="78" cy="108" r="2.6"/>',
+    hips:          '<path d="M30 134h60"/><circle cx="30" cy="134" r="2.6"/><circle cx="90" cy="134" r="2.6"/>',
+    shoulder:      '<path d="M37 52h46"/><circle cx="37" cy="52" r="2.6"/><circle cx="83" cy="52" r="2.6"/>',
+    bustPoint:     '<path d="M50 80h20"/><circle cx="50" cy="80" r="2.6"/><circle cx="70" cy="80" r="2.6"/>',
+    shoulderWaist: '<path d="M47 51 52 80 47 108"/><circle cx="47" cy="51" r="2.6"/><circle cx="47" cy="108" r="2.6"/>',
+    sleeveLength:  '<path d="M36 54Q25 84 23 120"/><circle cx="36" cy="54" r="2.6"/><circle cx="23" cy="120" r="2.6"/>',
+    upperArm:      '<ellipse cx="29" cy="82" rx="8" ry="3.2"/>',
+    dressLength:   '<path d="M60 52v174" stroke-dasharray="4 3"/><circle cx="60" cy="52" r="2.6"/><circle cx="60" cy="226" r="2.6"/>',
+    height:        '<path d="M108 12v214"/><path d="M103 12h10M103 226h10"/>',
+  };
+  const FIGURE = '<path class="fig" d="M38 52h44q4 14 0 28-6 16-8 28 6 12 10 26l8 92H28l8-92q4-14 10-26-2-12-8-28-4-14 0-28Z"/>' +
+    '<path class="fig" d="M36 54Q24 84 22 120l8 1q2-34 12-60Z"/><path class="fig" d="M84 54Q96 84 98 120l-8 1q-2-34-12-60Z"/>' +
+    '<path class="fig" d="M54 40v12M66 40v12"/><circle class="fig" cx="60" cy="26" r="14"/>';
+  const diagram = (key) => `<svg viewBox="0 0 120 240" width="52" height="104" aria-hidden="true">${FIGURE}<g class="mk">${MARK[key] || ''}</g></svg>`;
+
+  function showGuide(key) {
+    const m = MEASUREMENTS.find((x) => x.key === key) || MEASUREMENTS[0];
+    const g = $('#mGuide');
+    if (g.dataset.key === m.key) return;
+    g.dataset.key = m.key;
+    g.innerHTML = `${diagram(m.key)}<div><b>${m.label}${m.optional ? ' <i>optional</i>' : ''}</b><p>${TIPS[m.key] || m.hint}</p></div>`;
+  }
+
   // ---------- measurements ----------
   function buildMeasureFields() {
     $('#measureFields').innerHTML = MEASUREMENTS.map((m) => `
-      <label class="field" title="${m.hint}">${m.label}
+      <label class="field">${m.label}${m.optional ? ' <span class="opt">(optional)</span>' : ''}
         <span class="unitwrap"><input name="m_${m.key}" type="number" inputmode="decimal" step="0.25" min="0" data-key="${m.key}" ${m.optional ? '' : 'required'}><i class="unit">in</i></span>
       </label>`).join('');
+    showGuide(MEASUREMENTS[0].key);
   }
 
   const toCm = (v) => v * IN;
@@ -395,6 +437,7 @@
     if (state.step === 3) submit(); else showStep(state.step + 1);
   });
   $('#review').addEventListener('click', (e) => { const b = e.target.closest('[data-goto]'); if (b) showStep(Number(b.dataset.goto)); });
+  $('#measureFields').addEventListener('focusin', (e) => { const i = e.target.closest('[data-key]'); if (i) showGuide(i.dataset.key); });
   form.addEventListener('submit', (e) => { e.preventDefault(); nextBtn.click(); });
   form.addEventListener('input', (e) => {
     const inp = e.target.closest('[data-key]');
