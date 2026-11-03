@@ -61,6 +61,6 @@ window.RAPH_CONFIG = {
   // in the dashboard heading). See supabase/README.md. While this is null, orders are only saved in the browser they were made
   // in, and the confirmation screen says so.
   // Cloudflare Turnstile site key (public) for spam protection; see supabase/README.md step 8. null = off.
-  turnstileSiteKey: null,
+  turnstileSiteKey: '0x4AAAAAAFx3hp_-DMaQ3Ru7',
   orderEndpoint: 'https://ploapqarddqvqooxkiut.supabase.co/functions/v1/clever-processor',
 };
