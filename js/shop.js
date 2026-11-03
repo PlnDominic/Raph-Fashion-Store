@@ -123,6 +123,7 @@
     dialog.querySelectorAll('[data-step]').forEach((s) => { s.hidden = String(s.dataset.step) !== String(n); });
     const done = n === 'done';
     $('#orderNav').hidden = done;
+    $('#orderCaptcha').style.display = done ? 'none' : '';   // the check has done its job once the order is in
     stepsEl.hidden = done;
     if (!done) {
       stepsEl.innerHTML = STEP_NAMES.map((name, i) =>
