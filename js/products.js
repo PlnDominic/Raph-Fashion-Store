@@ -65,6 +65,14 @@ window.PRODUCTS = [
     images: ['assets/products/ruby-luxe-statement-dress.webp'],
   },
   {
+    id: 'luxe-silhouette-dress',
+    name: 'Luxe Silhouette Dress',
+    readyMade: true,
+    price: 250,
+    leadTime: null,
+    images: ['assets/products/luxe-silhouette-dress.webp'],   // original studio background kept, as the owner asked
+  },
+  {
     id: 'cafe-creme-set',
     name: 'Café Crème Set',
     readyMade: false,        // made to order; price on request until the owner sets one
