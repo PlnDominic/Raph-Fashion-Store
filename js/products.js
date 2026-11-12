@@ -81,6 +81,14 @@ window.PRODUCTS = [
     images: ['assets/products/duchess-navy-dress.webp'],   // original studio background kept
   },
   {
+    id: 'turquoise-elegance-set',
+    name: 'Turquoise Elegance Set',
+    readyMade: true,
+    price: 350,
+    leadTime: null,
+    images: ['assets/products/turquoise-elegance-set.webp'],   // original studio background kept
+  },
+  {
     id: 'cafe-creme-set',
     name: 'Café Crème Set',
     readyMade: false,        // made to order; price on request until the owner sets one
