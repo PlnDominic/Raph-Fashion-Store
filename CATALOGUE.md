@@ -25,7 +25,7 @@ The live source for the shop is `js/products.js`. Keep the two in step.
 ## Named by Claude (the owner gave no name or price: change freely)
 | Photo file | Name | Price | On the site? | id |
 |---|---|---|---|---|
-| 1.JPG (cream blouse, brown skirt) | Café Crème Set | price on request | yes, order-to-measure only | cafe-creme-set |
+| 1.JPG (cream blouse, brown skirt) | The Zaria Luxe Corset Dress | 270 | yes (original background kept; named by the owner) | zaria-luxe-corset-dress |
 | 1-6.JPG (cream long-sleeve dress, brown tassels) | Cocoa Tassel Dress | price on request | yes, order-to-measure only | cocoa-tassel-dress |
 
 ## Adding a dress

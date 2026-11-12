@@ -105,12 +105,12 @@ window.PRODUCTS = [
     images: ['assets/products/black-pearl.webp'],   // original studio background kept
   },
   {
-    id: 'cafe-creme-set',
-    name: 'Café Crème Set',
-    readyMade: false,        // made to order; price on request until the owner sets one
-    price: null,
+    id: 'zaria-luxe-corset-dress',
+    name: 'The Zaria Luxe Corset Dress',
+    readyMade: true,
+    price: 270,
     leadTime: null,
-    images: ['assets/products/cafe-creme-set.webp'],
+    images: ['assets/products/zaria-luxe-corset-dress.webp'],   // original studio background kept
   },
   {
     id: 'cocoa-tassel-dress',
