@@ -57,6 +57,14 @@ window.PRODUCTS = [
     images: ['assets/products/royal-plum-set.webp'],
   },
   {
+    id: 'ruby-luxe-statement-dress',
+    name: 'Ruby Luxe Statement Dress',
+    readyMade: true,
+    price: 270,
+    leadTime: null,
+    images: ['assets/products/ruby-luxe-statement-dress.webp'],
+  },
+  {
     id: 'cafe-creme-set',
     name: 'Café Crème Set',
     readyMade: false,        // made to order; price on request until the owner sets one
