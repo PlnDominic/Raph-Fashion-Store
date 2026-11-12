@@ -17,7 +17,7 @@ The live source for the shop is `js/products.js`. Keep the two in step.
 | 1-8.JPG (lavender top, plum skirt) | Royal Plum Set | 300 | yes | royal-plum-set |
 | 2(2).JPG (purple dress, big collar; also 2(3), 2(4), 2(4)(2), 2(4)(3)) | Ruby Luxe Statement Dress | 270 | yes | ruby-luxe-statement-dress |
 | 3(14)(1).JPG (orange dress, slit; also 3(14)) | Luxe Silhouette Dress | 250 | yes (original background kept, by the owner's request) | luxe-silhouette-dress |
-| 3(9).JPG (navy dress, brown waist and cuffs) | Duchess Navy Dress | 290 | photos not received as files yet | duchess-navy-dress |
+| 3(9).JPG (navy dress, brown waist and cuffs) | Duchess Navy Dress | 290 | yes (original background kept) | duchess-navy-dress |
 | 2(5).JPG (turquoise top and trousers; also 2(6)) | Turquoise Elegance Set | 350 | photos not received as files yet | turquoise-elegance-set |
 | 2(7).JPG (red dress, slit sleeves) | Scarlett Slit Sleeve Dress | 250 | photos not received as files yet | scarlett-slit-sleeve-dress |
 | 3(4).JPG (black flared dress; also 3(2), 3(8)) | Black Pearl | 250 | photos not received as files yet | black-pearl |
