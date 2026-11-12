@@ -20,7 +20,7 @@ window.PRODUCTS = [
     readyMade: true,
     price: 300,
     leadTime: null,
-    images: ['assets/products/royal-plum-set.webp'],
+    images: ['assets/products/royal-plum-set.webp'],   // original background kept
   },
   {
     id: 'ruby-luxe-statement-dress',
@@ -28,7 +28,7 @@ window.PRODUCTS = [
     readyMade: true,
     price: 270,
     leadTime: null,
-    images: ['assets/products/ruby-luxe-statement-dress.webp'],
+    images: ['assets/products/ruby-luxe-statement-dress.webp'],   // original background kept
   },
   {
     id: 'luxe-silhouette-dress',

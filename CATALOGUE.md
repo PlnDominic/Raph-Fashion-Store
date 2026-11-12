@@ -11,8 +11,8 @@ The Sunset Kente dress still appears in the homepage scroll animation (the hero 
 ## Workwear collection (from the owner's WhatsApp list, by photo file name)
 | Photo file | Name | Price | On the site? | id |
 |---|---|---|---|---|
-| 1-8.JPG (lavender top, plum skirt) | Royal Plum Set | 300 | yes | royal-plum-set |
-| 2(2).JPG (purple dress, big collar; also 2(3), 2(4), 2(4)(2), 2(4)(3)) | Ruby Luxe Statement Dress | 270 | yes | ruby-luxe-statement-dress |
+| 1-8.JPG (lavender top, plum skirt) | Royal Plum Set | 300 | yes (original background kept) | royal-plum-set |
+| 2(2).JPG (purple dress, big collar; also 2(3), 2(4), 2(4)(2), 2(4)(3)) | Ruby Luxe Statement Dress | 270 | yes (original background kept) | ruby-luxe-statement-dress |
 | 3(14)(1).JPG (orange dress, slit; also 3(14)) | Luxe Silhouette Dress | 250 | yes (original background kept, by the owner's request) | luxe-silhouette-dress |
 | 3(9).JPG (navy dress, brown waist and cuffs) | Duchess Navy Dress | 290 | yes (original background kept) | duchess-navy-dress |
 | 2(5).JPG (turquoise top and trousers; also 2(6)) | Turquoise Elegance Set | 350 | yes (original background kept) | turquoise-elegance-set |
