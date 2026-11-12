@@ -97,6 +97,14 @@ window.PRODUCTS = [
     images: ['assets/products/scarlett-slit-sleeve-dress.webp'],   // original studio background kept
   },
   {
+    id: 'black-pearl',
+    name: 'Black Pearl',
+    readyMade: true,
+    price: 250,
+    leadTime: null,
+    images: ['assets/products/black-pearl.webp'],   // original studio background kept
+  },
+  {
     id: 'cafe-creme-set',
     name: 'Café Crème Set',
     readyMade: false,        // made to order; price on request until the owner sets one
