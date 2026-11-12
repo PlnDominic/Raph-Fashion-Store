@@ -22,11 +22,11 @@ The live source for the shop is `js/products.js`. Keep the two in step.
 | 2(7).JPG (red dress, slit sleeves) | Scarlett Slit Sleeve Dress | 250 | yes (original background kept) | scarlett-slit-sleeve-dress |
 | 3(4).JPG (black flared dress; also 3(2), 3(8)) | Black Pearl | 250 | yes (original background kept) | black-pearl |
 
-## Named by Claude (the owner gave no name or price: change freely)
+## Named by the owner after first being named by Claude
 | Photo file | Name | Price | On the site? | id |
 |---|---|---|---|---|
 | 1.JPG (cream blouse, brown skirt) | The Zaria Luxe Corset Dress | 270 | yes (original background kept; named by the owner) | zaria-luxe-corset-dress |
-| 1-6.JPG (cream long-sleeve dress, brown tassels) | Cocoa Tassel Dress | price on request | yes, order-to-measure only | cocoa-tassel-dress |
+| 1-6.JPG (cream long-sleeve dress, brown tassels) | The Luxe Tassel Midi Dress | 270 | yes (original background kept; named by the owner) | luxe-tassel-midi-dress |
 
 ## Adding a dress
 1. Put the original photo in `assets/source/products/<id>.jpg`.

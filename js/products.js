@@ -113,12 +113,12 @@ window.PRODUCTS = [
     images: ['assets/products/zaria-luxe-corset-dress.webp'],   // original studio background kept
   },
   {
-    id: 'cocoa-tassel-dress',
-    name: 'Cocoa Tassel Dress',
-    readyMade: false,
-    price: null,
+    id: 'luxe-tassel-midi-dress',
+    name: 'The Luxe Tassel Midi Dress',
+    readyMade: true,
+    price: 270,
     leadTime: null,
-    images: ['assets/products/cocoa-tassel-dress.webp'],
+    images: ['assets/products/luxe-tassel-midi-dress.webp'],   // original studio background kept
   },
 ];
 
