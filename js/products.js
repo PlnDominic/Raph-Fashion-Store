@@ -89,6 +89,14 @@ window.PRODUCTS = [
     images: ['assets/products/turquoise-elegance-set.webp'],   // original studio background kept
   },
   {
+    id: 'scarlett-slit-sleeve-dress',
+    name: 'Scarlett Slit Sleeve Dress',
+    readyMade: true,
+    price: 250,
+    leadTime: null,
+    images: ['assets/products/scarlett-slit-sleeve-dress.webp'],   // original studio background kept
+  },
+  {
     id: 'cafe-creme-set',
     name: 'Café Crème Set',
     readyMade: false,        // made to order; price on request until the owner sets one
