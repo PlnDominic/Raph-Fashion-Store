@@ -48,6 +48,14 @@ window.PRODUCTS = [
     leadTime: null,
     images: ['assets/products/ivory-ombre-drape.webp'],
   },
+  {
+    id: 'royal-plum-set',
+    name: 'Royal Plum Set',
+    readyMade: true,
+    price: 300,
+    leadTime: null,
+    images: ['assets/products/royal-plum-set.webp'],
+  },
 ];
 
 window.RAPH_CONFIG = {
