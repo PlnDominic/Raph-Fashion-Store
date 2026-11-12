@@ -56,6 +56,22 @@ window.PRODUCTS = [
     leadTime: null,
     images: ['assets/products/royal-plum-set.webp'],
   },
+  {
+    id: 'cafe-creme-set',
+    name: 'Café Crème Set',
+    readyMade: false,        // made to order; price on request until the owner sets one
+    price: null,
+    leadTime: null,
+    images: ['assets/products/cafe-creme-set.webp'],
+  },
+  {
+    id: 'cocoa-tassel-dress',
+    name: 'Cocoa Tassel Dress',
+    readyMade: false,
+    price: null,
+    leadTime: null,
+    images: ['assets/products/cocoa-tassel-dress.webp'],
+  },
 ];
 
 window.RAPH_CONFIG = {
