@@ -3,13 +3,10 @@
 The single record of what each dress is called and what it costs (GHS), as given by the owner on WhatsApp.
 The live source for the shop is `js/products.js`. Keep the two in step.
 
-## Earlier dresses (kente collection)
-| Name | Price | id |
-|---|---|---|
-| The Sunset Kente Mermaid | 4,800 | sunset-kente-mermaid |
-| The Ruby Kente Mermaid | 4,000 | ruby-kente-mermaid (name still to confirm) |
-| The Cocoa Kente Gown | 4,500 | cocoa-kente-gown (name still to confirm) |
-| The Ivory Ombré Drape | 3,000 | ivory-ombre-drape (name still to confirm) |
+## Removed from the shop (owner's request)
+The Sunset Kente Mermaid (4,800), The Ruby Kente Mermaid (4,000), The Cocoa Kente Gown (4,500) and The Ivory Ombré Drape (3,000).
+Their stock rows may still exist in Supabase (`product_stock`); they are harmless and no longer shown.
+The Sunset Kente dress still appears in the homepage scroll animation (the hero video), but it is no longer sold.
 
 ## Workwear collection (from the owner's WhatsApp list, by photo file name)
 | Photo file | Name | Price | On the site? | id |
