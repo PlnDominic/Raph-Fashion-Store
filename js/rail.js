@@ -52,9 +52,40 @@
     layout();
     cap.classList.add('is-swap');
     setTimeout(() => { caption(); cap.classList.remove('is-swap'); }, 220);
+    if (typeof schedule === 'function') schedule();
   }
   layout(); caption();
 
+  // ---------- moves along by itself ----------
+  // Every few seconds, unless the visitor is busy: pointer over it, focus inside it, a sheet or dialog open, the hero
+  // off screen, the tab hidden, or they pressed Pause. Visitors who ask their device for less motion get no autoplay.
+  const EVERY = 4800;
+  const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const play = $('railPlay');
+  let userPaused = calm, hover = false, inside = false, seen = true, timer = null;
+  const busy = () => userPaused || hover || inside || !seen || document.hidden || !!document.querySelector('dialog[open]');
+  function schedule() {
+    clearTimeout(timer);
+    timer = setTimeout(() => { if (!busy()) go(cur + 1); schedule(); }, EVERY);
+  }
+  function setPaused(p) {
+    userPaused = p; play.textContent = p ? 'Play' : 'Pause'; play.setAttribute('aria-pressed', String(p));
+  }
+  setPaused(calm);
+  play.addEventListener('click', () => { setPaused(!userPaused); schedule(); });
+  const stage = document.querySelector('.rail__stage');
+  const over = (e) => { if (e.pointerType === 'mouse') hover = true; };
+  // only the models and the buttons hold it, not the whole screen
+  document.querySelectorAll('.carousel, .rail__acts').forEach((el) => {
+    el.addEventListener('pointerover', over); el.addEventListener('pointermove', over);
+    el.addEventListener('pointerleave', () => { hover = false; schedule(); });
+  });
+  // keyboard focus on the carousel or its buttons holds it (a mouse click on Pause or Play must not)
+  stage.addEventListener('focusin', (e) => { inside = e.target.matches(':focus-visible') && !!e.target.closest('.carousel, .rail__caption'); });
+  stage.addEventListener('focusout', () => { inside = false; });
+  if ('IntersectionObserver' in window) new IntersectionObserver((en) => { seen = en[0].isIntersecting; }, { threshold: 0.35 }).observe(stage);
+
+  schedule();
   $('railPrev').addEventListener('click', () => go(cur - 1));
   $('railNext').addEventListener('click', () => go(cur + 1));
   document.addEventListener('keydown', (e) => {
