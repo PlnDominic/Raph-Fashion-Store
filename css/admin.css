@@ -641,3 +641,14 @@ body { font-feature-settings: "tnum" 1, "cv11" 1; }
 .od > .od__head, .od > .danger-link, .od > .back { column-span: all; }
 @media (max-width: 1250px) { .od { column-count: 1; } }
 .od > .card, .od > details.card, .od > details.fold { margin: 0 0 16px; }
+
+/* ---- stock: elevated cards across the full width ---- */
+.wrap:has(#tab-stock:not([hidden])) { max-width: none; }
+.sgrid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; border-bottom: 0; align-items: start; }
+.scard { background: #fff; border: 1px solid rgba(31, 26, 22, .06); border-radius: 16px; padding: 18px; box-shadow: 0 1px 2px rgba(20, 30, 25, .05), 0 8px 22px rgba(20, 30, 25, .06); transition: box-shadow .15s, transform .15s; }
+.scard:hover { box-shadow: 0 2px 4px rgba(20, 30, 25, .06), 0 12px 26px rgba(20, 30, 25, .1); transform: translateY(-1px); }
+.scard header { margin-bottom: 12px; }
+.tile { background: var(--bg); border-color: transparent; }
+.tile.is-out { background: #fbeeed; } .tile.is-low { background: #fdf6e3; }
+.addsize { max-width: none; border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
+@media (max-width: 959px) { .sgrid { grid-template-columns: 1fr; gap: 12px; } .scard { padding: 16px; } }
