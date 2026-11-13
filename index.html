@@ -219,6 +219,9 @@
           <label class="field">Phone / WhatsApp
             <input name="phone" type="tel" inputmode="tel" autocomplete="tel" required>
           </label>
+          <label class="field">Email <span class="opt">(optional, for order updates)</span>
+            <input name="email" type="email" inputmode="email" autocomplete="email" maxlength="120">
+          </label>
           <label class="field">Delivery address
             <input name="address" autocomplete="street-address" required>
           </label>
@@ -258,7 +261,7 @@
         <section data-step="3" hidden>
           <h4>Review</h4>
           <div id="review" class="review"></div>
-          <label class="consent"><input type="checkbox" id="consent"><span>I agree to the <a href="privacy.html" target="_blank" rel="noopener">Privacy Notice</a> and that Mave Collection may use my details, measurements and photos to make and deliver my order.</span></label>
+          <label class="consent"><input type="checkbox" id="consent"><span>I agree to the <a href="privacy.html" target="_blank" rel="noopener">Privacy Notice</a> and that Mave Collection may use my details, measurements and photos to make and deliver my order, and message me about it by SMS or email.</span></label>
           <small class="err" id="consentError" role="alert"></small>
           <label class="consent consent--soft"><input type="checkbox" id="remember" checked><span>Remember my details and measurements on this device, so next time I only change what is different.</span></label>
         </section>

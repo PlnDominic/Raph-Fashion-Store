@@ -13,6 +13,7 @@
   const S = { token: null, orders: [], fittings: [], stock: [], products: [], content: {}, tab: 'orders', filter: 'all', q: '', open: null, editing: null };
   try { S.token = sessionStorage.getItem('mave_admin'); } catch (e) { /* ignore */ }
 
+  const wantsNotify = () => { try { return localStorage.getItem('mave_notify') !== '0'; } catch (e) { return true; } };
   const ghs = (n) => (n == null ? 'Price to confirm' : 'GHS ' + Number(n).toLocaleString('en-GH'));
   const when = (iso) => new Date(iso).toLocaleString('en-GB', { timeZone: 'Africa/Accra', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
   const dayLong = (ymd) => new Date(ymd + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
@@ -129,11 +130,12 @@
         <label>Status<select data-set="status">${opt(STATUSES, o.status)}</select></label>
         <label>Payment<select data-set="payment_status">${opt(PAYMENTS, o.payment_status)}</select></label>
         ${nx ? `<button class="ghost" data-next="${nx}">Move to ${nx} →</button>` : ''}
+        <label class="notify"><input type="checkbox" data-notify ${wantsNotify() ? 'checked' : ''}> Message the customer about this change</label>
         <span class="grow"><a class="ghost" href="${esc(wa(o.customer_phone))}" target="_blank" rel="noopener">WhatsApp</a>
           <a class="ghost" href="tel:${esc(String(o.customer_phone).replace(/[^\d+]/g, ''))}">Call</a></span>
       </div>
       <dl class="grid2 kv">
-        <div><dt>Customer</dt><dd>${esc(o.customer_name)}<br>${esc(o.customer_phone)}</dd></div>
+        <div><dt>Customer</dt><dd>${esc(o.customer_name)}<br>${esc(o.customer_phone)}${o.customer_email ? '<br>' + esc(o.customer_email) : ''}</dd></div>
         <div><dt>Address</dt><dd>${esc(o.delivery_address)}</dd></div>
         <div><dt>Type</dt><dd>${esc(KIND[o.kind] || o.kind)}</dd></div>
         <div><dt>Needed by</dt><dd>${o.need_by ? esc(o.need_by) : 'No date given'}</dd></div>
@@ -145,6 +147,7 @@
       ${o.notes ? `<div class="sec"><h4>Customer note</h4><p style="margin:0;white-space:pre-wrap">${esc(o.notes)}</p></div>` : ''}
       ${meas ? `<div class="sec"><h4>Measurements (inches)</h4><dl class="meas">${meas}</dl></div>` : ''}
       ${o.photos && o.photos.length ? `<div class="sec"><h4>Style photos</h4><div class="photos">${o.photos.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="Style photo" loading="lazy"></a>`).join('')}</div></div>` : ''}
+      ${(o.order_messages || []).length ? `<div class="sec"><h4>Messages to the customer</h4>${[...o.order_messages].sort((a, b) => a.sent_at < b.sent_at ? 1 : -1).map((m) => `<p style="margin:0">${when(m.sent_at)} &middot; ${esc(m.channel === 'sms' ? 'SMS' : 'Email')} &middot; ${esc(m.kind)} ${m.error ? `<span class="mail-bad">failed: ${esc(m.error)}</span>` : '<span class="mail-ok">sent</span>'}</p>`).join('')}</div>` : ''}
       ${fits.length ? `<div class="sec"><h4>Fitting</h4>${fits.map((f) => `<p style="margin:0">${dayLong(f.slot_start.slice(0, 10))}, ${hhmm(f.slot_start)} <span class="pill pill--${f.status === 'booked' ? 'confirmed' : f.status === 'done' ? 'delivered' : 'cancelled'}">${f.status}</span></p>`).join('')}</div>` : ''}
       <div class="sec"><label class="field">Internal notes (only your team sees this)<textarea data-notes>${esc(o.internal_notes || '')}</textarea></label>
         <button class="ghost" data-save-notes style="margin-top:8px">Save notes</button></div>
@@ -152,7 +155,11 @@
   }
 
   async function updateOrder(id, patch, okMsg) {
-    try { await api('admin_update_order', Object.assign({ id }, patch)); Object.assign(S.orders.find((o) => o.id === id), patch); toast(okMsg || 'Saved'); }
+    try {
+      const r = await api('admin_update_order', Object.assign({ id, notify: wantsNotify() }, patch));
+      Object.assign(S.orders.find((o) => o.id === id), patch);
+      toast((okMsg || 'Saved') + (r.messaging ? '. Telling the customer.' : ''));
+    }
     catch (x) { toast(x.message, true); await loadAll(); return; }
     renderStats(); renderChips(); renderOrders();
   }
@@ -168,6 +175,8 @@
     if (e.target.closest('[data-save-total]')) { const v = card.querySelector('[data-total]').value; return updateOrder(id, { total_ghs: v === '' ? null : Number(v) }, 'Total saved'); }
   });
   $('orderList').addEventListener('change', (e) => {
+    const nt = e.target.closest('[data-notify]');
+    if (nt) { try { localStorage.setItem('mave_notify', nt.checked ? '1' : '0'); } catch (x) { /* ignore */ } return; }
     const sel = e.target.closest('[data-set]'); if (!sel) return;
     const id = sel.closest('.card').dataset.id;
     if (sel.dataset.set === 'status' && sel.value === 'cancelled' && !confirm('Cancel this order? Ready-made dresses go back in stock.')) { renderOrders(); return; }

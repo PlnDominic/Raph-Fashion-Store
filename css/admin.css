@@ -165,3 +165,5 @@ a { color: var(--green); }
 .infoitem { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 10px; background: var(--soft); }
 .infoitem .acts { display: flex; gap: 6px; margin-top: 8px; }
 @media (max-width: 720px) { .dress { grid-template-columns: 52px 1fr; } .dress .acts { grid-column: 1 / -1; justify-content: flex-start; } .dress__img { width: 52px; height: 68px; } }
+
+.notify { display: flex; gap: 8px; align-items: center; font-size: .82rem; letter-spacing: 0; text-transform: none; color: var(--ink); font-weight: 400; }

@@ -17,7 +17,7 @@
 
   let cart = load();
   let view = 'list';                 // list | checkout | done
-  let details = { name: '', phone: '', address: '', notes: '', consent: false };
+  let details = { name: '', phone: '', email: '', address: '', notes: '', consent: false };
   let doneInfo = null;
   let notice = '';                   // why the cart changed (e.g. a size sold out); shown until the customer acts
 
@@ -109,10 +109,11 @@
     body.innerHTML = `
       <label class="field">Full name<input name="name" autocomplete="name" value="${R.esc(details.name)}"></label>
       <label class="field">Phone / WhatsApp<input name="phone" type="tel" inputmode="tel" autocomplete="tel" value="${R.esc(details.phone)}"></label>
+      <label class="field">Email <span class="opt">(optional, for order updates)</span><input name="email" type="email" inputmode="email" autocomplete="email" maxlength="120" value="${R.esc(details.email || '')}"></label>
       <label class="field">Delivery address<input name="address" autocomplete="street-address" value="${R.esc(details.address)}"></label>
       <label class="field">Notes <span class="opt">(optional)</span><textarea name="notes" rows="2">${R.esc(details.notes)}</textarea></label>
       <div class="captcha" id="cartCaptcha"></div>
-      <label class="consent"><input type="checkbox" name="consent"${details.consent ? ' checked' : ''}><span>I agree to the <a href="privacy.html" target="_blank" rel="noopener">Privacy Notice</a> and that Mave Collection may use my details to prepare and deliver my order.</span></label>
+      <label class="consent"><input type="checkbox" name="consent"${details.consent ? ' checked' : ''}><span>I agree to the <a href="privacy.html" target="_blank" rel="noopener">Privacy Notice</a> and that Mave Collection may use my details to prepare and deliver my order, and message me about it by SMS or email.</span></label>
       <div class="cart__total"><span>Total</span><strong>${totalText()}</strong></div>`;
     foot.innerHTML = `
       <div class="cart__nav">
@@ -184,6 +185,8 @@
     f.querySelectorAll('[aria-invalid]').forEach((e) => e.removeAttribute('aria-invalid'));
     if (!name.value.trim()) return setError('Enter your name.', name);
     if (phone.value.replace(/\D/g, '').length < 9) return setError('Enter a valid phone number.', phone);
+    const email = f.querySelector('[name=email]');
+    if (email.value.trim() && !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email.value.trim())) return setError('That email address does not look right.', email);
     if (!address.value.trim()) return setError('Enter your delivery address.', address);
     const consent = f.querySelector('[name=consent]');
     if (!consent.checked) return setError('Please tick the box to continue.', consent);
@@ -193,7 +196,7 @@
       reference: R.ref(),
       placedAt: new Date().toISOString(),
       items: cart.map((i) => { const p = prod(i.id); return { id: p.id, name: p.name, size: i.size, qty: i.qty, price: p.price }; }),
-      customer: { name: name.value.trim(), phone: phone.value.trim(), address: address.value.trim() },
+      customer: { name: name.value.trim(), phone: phone.value.trim(), email: email.value.trim() || null, address: address.value.trim() },
       notes: f.querySelector('[name=notes]').value.trim(),
     };
     const btn = foot.querySelector('[data-place]');
@@ -214,7 +217,7 @@
       if (window.RaphCaptcha) window.RaphCaptcha.reset(captchaBox);
       return setError(e && e.data && e.data.message ? e.data.message : 'Could not send. Check your connection and try again.');
     }
-    doneInfo = { ref: order.reference, msg: `Thank you, ${order.customer.name.split(' ')[0]}. We'll call you on ${order.customer.phone} to confirm.` };
+    doneInfo = { ref: order.reference, msg: `Thank you, ${order.customer.name.split(' ')[0]}. We'll call you on ${order.customer.phone} to confirm.${order.customer.email ? ' A copy is on its way to ' + order.customer.email + '.' : ''}` };
     cart = []; details.consent = false; save();
     view = 'done'; render();
   }

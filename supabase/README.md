@@ -146,6 +146,28 @@ The **Dresses** and **Site text** tabs on `/admin.html` change what the website 
 - The line-up cut-out needs a transparent background. Removing a background is not done in the admin page; use `scripts/make_rail_cutouts.py` (see the main README) or any background-remover tool, then upload the result.
 - Deleting a dress does not touch past orders. If you only want it off the website for a while, use **Hide**.
 
+## 12. Messages to customers (confirmation and order updates)
+
+Customers get a message when their order is placed and when it moves along. **Email** goes to the address they gave (the field is optional) through the same Resend account as the team emails, with replies going to your contact email. **SMS** goes to the phone number on every order, once you add an SMS account. Every message sent (or failed) is listed on the order in the admin page under "Messages to the customer".
+
+| When | Email | SMS |
+|---|---|---|
+| Order placed | yes, with the items, total and measurements | yes |
+| Confirmed | yes | yes |
+| Cutting, Sewing | yes, with a progress bar | no (to save SMS cost) |
+| Ready | yes | yes |
+| Delivered | yes | yes |
+| Cancelled | yes | yes |
+| Payment marked paid | yes | no |
+
+**Set it up:**
+1. SQL Editor, paste `supabase/migrations/20261114000000_customer_messages.sql`, Run.
+2. Redeploy the function with the latest `supabase/functions/place-order/index.ts`.
+3. Emails need nothing more if the team emails already work (`RESEND_API_KEY` and `NOTIFY_FROM` set with your verified domain; without a verified domain Resend can only email your own address).
+4. For SMS, create an account with [Arkesel](https://arkesel.com) (Ghana), register a sender name, and add two Edge Function secrets: `ARKESEL_API_KEY` and `SMS_SENDER` (up to 11 letters, for example `MaveColl`, the name customers see). Without the key, no SMS is sent and nothing breaks. Check Arkesel's current pricing and sender-name rules.
+
+**In the admin page:** when you change an order's status or mark it paid, the box "Message the customer about this change" decides whether a message goes out (your choice is remembered). Changing a status back to one already sent in the last day does not email again, but may send the SMS again. Notes and total changes never send anything.
+
 ## Before you take real payments (Paystack)
 Prices are currently sent from the browser, and the function stores what it is sent. That is fine while the team confirms every order by phone, but **before online payment goes live the prices must live in the database** and the function must look them up itself, otherwise a customer could change a price. Do that in the same step as the Paystack integration.
 

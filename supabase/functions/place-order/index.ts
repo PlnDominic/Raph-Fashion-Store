@@ -76,6 +76,12 @@ function validate(o: any) {
   const customer_phone = str(c.phone, 'phone', 7, 24);
   if (!/^[+\d][\d\s()-]{6,}$/.test(customer_phone) || customer_phone.replace(/\D/g, '').length < 9) bad('phone number is not valid');
   const delivery_address = str(c.address, 'delivery address', 1, 300);
+  let customer_email: string | null = null;
+  if (typeof c.email === 'string' && c.email.trim()) {
+    const e = c.email.trim();
+    if (e.length > 120 || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(e)) bad('email address is not valid');
+    customer_email = e;
+  }
 
   let need_by: string | null = null;
   if (c.needBy) {
@@ -132,7 +138,7 @@ function validate(o: any) {
     }
   }
 
-  return { kind, customer_name, customer_phone, delivery_address, need_by, notes, items, measurements_cm, total };
+  return { kind, customer_name, customer_phone, customer_email, delivery_address, need_by, notes, items, measurements_cm, total };
 }
 
 // ---------- spam protection: Cloudflare Turnstile ----------
@@ -254,7 +260,7 @@ function buildEmail(reference: string, o: ReturnType<typeof validate>, photos: s
     price: ghs(i.unit_price_ghs as number | null),
   }));
   const meas = o.measurements_cm
-    ? Object.entries(o.measurements_cm).map(([k, v]) => ({ label: LABELS[k] ?? k, inch: Math.round((v / 2.54) * 4) / 4 }))
+    ? Object.entries(o.measurements_cm).sort(([x], [y]) => byMeasure(x, y)).map(([k, v]) => ({ label: LABELS[k] ?? k, inch: Math.round((v / 2.54) * 4) / 4 }))
     : [];
   const links = photos.map(safeUrl).filter((u): u is string => !!u);
 
@@ -523,6 +529,180 @@ async function handleFitting(
   return json({ ok: true, slot: new Date(f.slot).toISOString(), label: fittingWhen(f.slot), moved: f.moved });
 }
 
+// ---------- messages to the customer (email and SMS) ----------
+// An email when they gave an address, and an SMS to the phone number on the order (when an SMS account is set up:
+// secrets ARKESEL_API_KEY and SMS_SENDER). Every attempt is written to order_messages so the admin page can show it.
+// the order the measurements are always listed in
+const MEAS_ORDER = ['bust', 'underbust', 'waist', 'hips', 'shoulder', 'bustPoint', 'shoulderWaist', 'sleeveLength', 'upperArm', 'dressLength', 'height'];
+const byMeasure = (a: string, b: string) => (MEAS_ORDER.indexOf(a) + 100) % 100 - (MEAS_ORDER.indexOf(b) + 100) % 100;
+const STEPS = ['Received', 'Confirmed', 'Cutting', 'Sewing', 'Ready', 'Delivered'];
+const STATUS_KINDS = new Set(['confirmed', 'cutting', 'sewing', 'ready', 'delivered', 'cancelled']);
+const SMS_KINDS = new Set(['received', 'confirmed', 'ready', 'delivered', 'cancelled']);   // cutting and sewing are email only
+
+type Contact = { whatsapp: string; label: string; email: string };
+async function businessContact(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+): Promise<Contact> {
+  let whatsapp = '233541791986', label = '054 179 1986', email = 'info@mavecollections.com';
+  try {
+    const { data } = await supabase.from('site_content').select('value').eq('key', 'contacts').limit(1);
+    const v = (data ?? [])[0]?.value;
+    if (v?.whatsapp) { whatsapp = String(v.whatsapp); label = whatsapp.replace(/^233/, '0').replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3'); }
+    if (v?.email) email = String(v.email);
+  } catch { /* the defaults are fine */ }
+  return { whatsapp, label, email };
+}
+
+type Ctx = { id: string; reference: string; name: string; phone: string; email: string | null; items: string[]; total: number | null; lines?: Array<{ name: string; detail: string; price: string | null }>; measurements?: Array<{ label: string; inch: number }> };
+
+function messageFor(kind: string, c: Ctx, k: Contact) {
+  const first = c.name.trim().split(/\s+/)[0] || 'there';
+  const what = c.items.length ? (c.items.length > 1 ? `${c.items[0]} and ${c.items.length - 1} more` : c.items[0]) : 'your dress';
+  const wa = `WhatsApp ${k.label}`;
+  const T: Record<string, { subject: string; headline: string; text: string; sms: string; step: number | null }> = {
+    received: {
+      subject: `We've received your order ${c.reference}`, headline: `Thank you, ${first}.`, step: 0,
+      text: `We've received your order. Our team will call or message you on WhatsApp soon to confirm the details, the price and the timing, before anything is made or sent.`,
+      sms: `Mave Collection: thank you ${first}! We've received order ${c.reference}. We'll call or WhatsApp you to confirm. Questions? ${wa}.`,
+    },
+    confirmed: {
+      subject: `Your order ${c.reference} is confirmed`, headline: 'Your order is confirmed.', step: 1,
+      text: `Good news, ${first}. Order ${c.reference} (${what}) is confirmed. We'll let you know as it moves along.`,
+      sms: `Mave Collection: ${first}, your order ${c.reference} is confirmed. We'll keep you posted. ${wa}.`,
+    },
+    cutting: {
+      subject: `We've started on your dress (${c.reference})`, headline: `We've started on your dress.`, step: 2,
+      text: `Our tailors have started cutting ${what}.`, sms: '',
+    },
+    sewing: {
+      subject: `Your dress is being stitched (${c.reference})`, headline: 'Your dress is being stitched.', step: 3,
+      text: `${what} is on the sewing table now. Nearly there.`, sms: '',
+    },
+    ready: {
+      subject: `Your dress is ready (${c.reference})`, headline: 'Your dress is ready.', step: 4,
+      text: `${what} is ready, ${first}. Message us on WhatsApp (${k.label}) to arrange collection in Danfa or delivery.`,
+      sms: `Mave Collection: ${first}, your dress for order ${c.reference} is ready! Message us on WhatsApp ${k.label} to arrange collection or delivery.`,
+    },
+    delivered: {
+      subject: `Your order ${c.reference} is complete`, headline: 'All done. Thank you.', step: 5,
+      text: `Your order ${c.reference} is complete. We hope you love it. If the fit isn't quite right, tell us and we'll adjust it free of charge.`,
+      sms: `Mave Collection: your order ${c.reference} is complete. Thank you, ${first}! If the fit needs a tweak, ${wa} and we'll adjust it free.`,
+    },
+    cancelled: {
+      subject: `Your order ${c.reference} was cancelled`, headline: 'Your order was cancelled.', step: null,
+      text: `Order ${c.reference} has been cancelled. If you did not expect this, or you would like to order again, message us on WhatsApp (${k.label}).`,
+      sms: `Mave Collection: order ${c.reference} was cancelled. Not expecting this? ${wa}.`,
+    },
+    paid: {
+      subject: `Payment received for ${c.reference}`, headline: 'Payment received.', step: null,
+      text: `Thank you, ${first}. We've received your payment for order ${c.reference}.`, sms: '',
+    },
+  };
+  return T[kind] ?? null;
+}
+
+function buildCustomerEmail(kind: string, c: Ctx, k: Contact) {
+  const m = messageFor(kind, c, k)!;
+  const wa = `https://wa.me/${k.whatsapp}?text=${encodeURIComponent(`Hello Mave Collection, it's about my order ${c.reference}.`)}`;
+  const total = ghs(c.total);
+  const rows = (c.lines ?? []).map((i) =>
+    `<tr><td style="padding:11px 0;border-bottom:1px solid ${RULE};font:15px/1.45 ${SANS};color:${INK}"><b>${esc(i.name)}</b>${i.detail ? `<div style="font-size:14px;color:${MUTED}">${esc(i.detail)}</div>` : ''}</td>
+     <td align="right" valign="top" style="padding:11px 0;border-bottom:1px solid ${RULE};font:15px/1.45 ${SANS};color:${INK};white-space:nowrap">${esc(i.price ?? 'Price to confirm')}</td></tr>`).join('');
+  const meas = (c.measurements ?? []).map((x, n, a) =>
+    `<tr><td style="padding:7px 0;${n === a.length - 1 ? '' : `border-bottom:1px solid ${RULE};`}font:14px/1.4 ${SANS};color:${MUTED}">${esc(x.label)}</td><td align="right" style="padding:7px 0;${n === a.length - 1 ? '' : `border-bottom:1px solid ${RULE};`}font:15px/1.4 ${SANS};color:${INK}">${x.inch} in</td></tr>`).join('');
+  const progress = m.step === null ? '' : `<tr><td class="px" style="padding:26px 32px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>${STEPS.map((st, n) =>
+    `<td align="center" style="padding:0 2px"><div style="height:4px;border-radius:2px;background:${n <= m.step! ? GREEN : RULE};font-size:0;line-height:0">&nbsp;</div><div style="padding-top:7px;font:${n === m.step ? '600' : '400'} 10px/1.2 ${SANS};letter-spacing:.08em;text-transform:uppercase;color:${n === m.step ? GREEN : '#9a948a'}">${st}</div></td>`).join('')}</tr></table></td></tr>`;
+  const text = [
+    m.headline, '', m.text, '',
+    `Order ${c.reference}${total ? ` · ${total}` : ''}`,
+    ...(c.lines ?? []).map((i) => `  ${i.name}${i.detail ? ` (${i.detail})` : ''}${i.price ? ` · ${i.price}` : ''}`),
+    '', `Questions? Reply to this email or WhatsApp ${k.label}.`, '', 'Mave Collection, Danfa, Accra', 'https://www.mavecollections.com',
+  ].join('\n');
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only"><title>${esc(m.subject)}</title>
+<style>a{color:${GREEN}}@media (max-width:620px){.px{padding-left:20px!important;padding-right:20px!important}}</style></head>
+<body style="margin:0;padding:0;background:#ffffff;-webkit-text-size-adjust:100%">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;font-size:1px;line-height:1px;color:#ffffff">${esc(m.text)}${'&nbsp;&zwnj;'.repeat(30)}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;text-align:left">
+<tr><td class="px" style="padding:28px 32px 0"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+  <td valign="middle"><img src="${LOGO_URL}" width="34" height="34" alt="" style="display:block;border:0"></td>
+  <td valign="middle" style="padding-left:10px;font:600 17px/1 ${SERIF};color:${GREEN}">Mave Collection</td></tr></table></td></tr>
+<tr><td class="px" style="padding:34px 32px 0">
+  <div style="font:14px/1.4 ${SANS};color:${MUTED}">Order ${esc(c.reference)}</div>
+  <h1 style="margin:6px 0 12px;font:400 32px/1.15 ${SERIF};color:${INK}">${esc(m.headline)}</h1>
+  <div style="font:16px/1.65 ${SANS};color:${INK}">${esc(m.text)}</div>
+</td></tr>
+${progress}
+${rows ? `<tr><td class="px" style="padding:30px 32px 0"><div style="font:400 19px/1.3 ${SERIF};color:${INK};margin-bottom:6px">Your order</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${rows}
+  <tr><td style="padding:14px 0 0;font:14px/1.4 ${SANS};color:${MUTED}">Total</td><td align="right" style="padding:14px 0 0;font:600 18px/1.3 ${SANS};color:${INK}">${esc(total ?? 'To be confirmed')}</td></tr></table></td></tr>` : ''}
+${meas ? `<tr><td class="px" style="padding:30px 32px 0"><div style="font:400 19px/1.3 ${SERIF};color:${INK};margin-bottom:6px">Your measurements</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${meas}</table>
+  <div style="padding-top:8px;font:13px/1.5 ${SANS};color:${MUTED}">If anything here is wrong, tell us before we start cutting.</div></td></tr>` : ''}
+<tr><td class="px" style="padding:32px 32px 0"><a href="${esc(wa)}" style="display:inline-block;background:${GREEN};color:#ffffff;text-decoration:none;font:600 15px/1 ${SANS};padding:14px 22px;border-radius:6px">Message us on WhatsApp</a>
+  <div style="padding-top:12px;font:14px/1.5 ${SANS};color:${MUTED}">Or just reply to this email.</div></td></tr>
+<tr><td class="px" style="padding:36px 32px 36px"><div style="border-top:1px solid ${RULE};padding-top:16px;font:13px/1.6 ${SANS};color:${MUTED}">
+  Mave Collection &middot; Danfa, Accra<br><a href="https://www.mavecollections.com">www.mavecollections.com</a></div></td></tr>
+</table></td></tr></table></body></html>`;
+  return { subject: m.subject, html, text };
+}
+
+async function sendSms(phone: string, message: string): Promise<string | null> {
+  const key = Deno.env.get('ARKESEL_API_KEY');
+  if (!key) return 'skipped';
+  try {
+    const res = await fetch(Deno.env.get('SMS_API_URL') ?? 'https://sms.arkesel.com/api/v2/sms/send', {
+      method: 'POST',
+      headers: { 'api-key': key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sender: (Deno.env.get('SMS_SENDER') ?? 'Mave').slice(0, 11), message, recipients: [waNumber(phone)] }),
+      signal: AbortSignal.timeout(12_000),
+    });
+    const data = await res.json().catch(() => null);
+    if (res.ok && (data?.status === 'success' || data?.code === 'ok')) return null;
+    return `SMS provider answered ${res.status}${data?.message ? `: ${String(data.message).slice(0, 140)}` : ''}`;
+  } catch (e) { return `SMS unreachable: ${e instanceof Error ? e.message : String(e)}`; }
+}
+
+async function notifyCustomer(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  c: Ctx,
+  kind: string,
+) {
+  try {
+    const k = await businessContact(supabase);
+    const m = messageFor(kind, c, k);
+    if (!m) return;
+    const log = async (channel: 'email' | 'sms', recipient: string, error: string | null) => {
+      if (error) console.error('customer message', channel, kind, c.reference, error);
+      await supabase.from('order_messages').insert({ order_id: c.id, kind, channel, recipient, error: error ? error.slice(0, 300) : null });
+    };
+    const apiKey = Deno.env.get('RESEND_API_KEY');
+    if (c.email && apiKey) {
+      const mail = buildCustomerEmail(kind, c, k);
+      const err = await sendWithResend(apiKey, {
+        from: Deno.env.get('NOTIFY_FROM') ?? 'Mave Collection <onboarding@resend.dev>',
+        to: [c.email], reply_to: k.email, subject: mail.subject, html: mail.html, text: mail.text,
+      }, `cust-${c.id}-${kind}`);
+      await log('email', c.email, err);
+    }
+    if (SMS_KINDS.has(kind) && m.sms) {
+      const err = await sendSms(c.phone, m.sms);
+      if (err !== 'skipped') await log('sms', c.phone, err);
+    }
+  } catch (e) { console.error('notifyCustomer crashed', e instanceof Error ? e.message : String(e)); }
+}
+
+// runs after the reply has gone out, so the customer or the admin page never waits for it
+function inBackground(task: Promise<unknown>) {
+  // deno-lint-ignore no-explicit-any
+  const runtime = (globalThis as any).EdgeRuntime;
+  if (runtime?.waitUntil) runtime.waitUntil(task);
+  return task;
+}
+
 // ---------- admin dashboard ----------
 // The team signs in at /admin.html with the password stored in the secret ADMIN_PASSWORD (at least 12 characters).
 // A correct password returns a token that expires after 12 hours; every other admin call must carry it.
@@ -606,7 +786,7 @@ async function handleAdmin(
 
   if (action === 'admin_orders') {
     const { data, error } = await supabase.from('orders')
-      .select('id,reference,kind,status,payment_status,customer_name,customer_phone,delivery_address,need_by,notes,measurements_cm,total_ghs,internal_notes,created_at,notified_at,notify_error,order_items(product_id,product_name,size,qty,unit_price_ghs),order_photos(path)')
+      .select('id,reference,kind,status,payment_status,customer_name,customer_phone,customer_email,delivery_address,need_by,notes,measurements_cm,total_ghs,internal_notes,created_at,notified_at,notify_error,order_items(product_id,product_name,size,qty,unit_price_ghs),order_photos(path),order_messages(kind,channel,sent_at,error)')
       .order('created_at', { ascending: false }).limit(300);
     if (error) return fail(error, 'orders');
     // deno-lint-ignore no-explicit-any
@@ -634,6 +814,9 @@ async function handleAdmin(
       patch.total_ghs = t;
     }
     if (Object.keys(patch).length === 0) return json({ error: 'Nothing to change' }, 400);
+    const { data: prev } = await supabase.from('orders')
+      .select('reference,status,payment_status,customer_name,customer_phone,customer_email,total_ghs,order_items(product_name)').eq('id', id).limit(1);
+    const before = (prev ?? [])[0];
     const { error } = await supabase.from('orders').update(patch).eq('id', id);
     if (error) {
       if (/product_stock|check constraint/i.test(error.message ?? '')) {
@@ -641,7 +824,21 @@ async function handleAdmin(
       }
       return fail(error, 'update order');
     }
-    return json({ ok: true });
+    // tell the customer when the dress moves along (unless the team switched that off for this change)
+    let messaging: string | null = null;
+    if (before && b.notify !== false) {
+      const kind = patch.status && patch.status !== before.status && STATUS_KINDS.has(String(patch.status)) ? String(patch.status)
+        : patch.payment_status === 'paid' && before.payment_status !== 'paid' ? 'paid' : null;
+      if (kind) {
+        messaging = kind;
+        inBackground(notifyCustomer(supabase, {
+          id, reference: before.reference, name: before.customer_name, phone: before.customer_phone, email: before.customer_email ?? null,
+          items: ((before.order_items ?? []) as Array<{ product_name: string }>).map((i) => i.product_name),
+          total: before.total_ghs === null ? null : Number(before.total_ghs),
+        }, kind));
+      }
+    }
+    return json({ ok: true, messaging });
   }
 
   if (action === 'admin_stock') {
@@ -955,8 +1152,25 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Something went wrong. Please try again.' }, 500);
   }
 
-  // email the team in the background: the customer's confirmation never waits for it
-  const task = notifyTeam(supabase, id, reference as string, order, paths).catch((e) => console.error('notifyTeam crashed', e));
+  // email the team, and message the customer, in the background: the confirmation screen never waits for them
+  const task = Promise.all([
+    notifyTeam(supabase, id, reference as string, order, paths).catch((e) => console.error('notifyTeam crashed', e)),
+    (async () => {
+      if (order.customer_email) await supabase.from('orders').update({ customer_email: order.customer_email }).eq('id', id);
+      const lines = (order.items as Array<Record<string, unknown>>).map((i) => ({
+        name: String(i.product_name),
+        detail: [i.size ? String(i.size) : '', Number(i.qty) > 1 ? `× ${i.qty}` : ''].filter(Boolean).join(' '),
+        price: i.unit_price_ghs == null ? null : ghs(Number(i.unit_price_ghs)),
+      }));
+      const measurements = order.measurements_cm
+        ? Object.entries(order.measurements_cm).sort(([x], [y]) => byMeasure(x, y)).map(([key, v]) => ({ label: LABELS[key] ?? key, inch: Math.round((v / 2.54) * 4) / 4 }))
+        : [];
+      await notifyCustomer(supabase, {
+        id, reference: reference as string, name: order.customer_name, phone: order.customer_phone, email: order.customer_email,
+        items: lines.map((l) => l.name), total: order.total, lines, measurements,
+      }, 'received');
+    })().catch((e) => console.error('customer message crashed', e)),
+  ]);
   // deno-lint-ignore no-explicit-any
   const runtime = (globalThis as any).EdgeRuntime;
   if (runtime?.waitUntil) runtime.waitUntil(task); else await task;

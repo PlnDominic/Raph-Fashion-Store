@@ -228,6 +228,8 @@
       const name = form.elements.name, phone = form.elements.phone, address = form.elements.address;
       if (!name.value.trim()) return fail('Enter your name.', name);
       if (form.elements.phone.value.replace(/\D/g, '').length < 9) return fail('Enter a valid phone number.', phone);
+      const em = form.elements.email.value.trim();
+      if (em && !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(em)) return fail('That email address does not look right.', form.elements.email);
       if (!address.value.trim()) return fail('Enter your delivery address.', address);
     }
     if (step === 1) {
@@ -296,6 +298,7 @@
       customer: {
         name: form.elements.name.value.trim(),
         phone: form.elements.phone.value.trim(),
+        email: form.elements.email.value.trim() || null,
         address: form.elements.address.value.trim(),
         needBy: form.elements.needBy.value || null,
       },
@@ -333,6 +336,7 @@
         <dl class="rv__rows">
           <div><dt>Name</dt><dd>${esc(o.customer.name)}</dd></div>
           <div><dt>Phone</dt><dd>${esc(o.customer.phone)}</dd></div>
+          ${o.customer.email ? `<div><dt>Email</dt><dd>${esc(o.customer.email)}</dd></div>` : ''}
           <div><dt>Address</dt><dd>${esc(o.customer.address)}</dd></div>
           ${o.customer.needBy ? `<div><dt>Needed by</dt><dd>${esc(o.customer.needBy)}</dd></div>` : ''}
         </dl>
@@ -395,7 +399,7 @@
     state.last = { reference: order.reference, phone: order.customer.phone };
     nextBtn.disabled = false; nextBtn.textContent = 'Place order';
     $('#doneRef').textContent = order.reference;
-    $('#doneMsg').textContent = `Thank you, ${order.customer.name.split(' ')[0]}. We'll call you on ${order.customer.phone} to confirm.`;
+    $('#doneMsg').textContent = `Thank you, ${order.customer.name.split(' ')[0]}. We'll call you on ${order.customer.phone} to confirm.${order.customer.email ? ' A copy is on its way to ' + order.customer.email + '.' : ''}`;
     const dev = $('#devNote');
     dev.hidden = !!config.orderEndpoint;
     dev.textContent = 'Test mode: saved on this device only, not sent to Mave Collection.';
@@ -407,7 +411,7 @@
   function saveDraft() {
     try {
       const d = { f: {} };
-      ['name', 'phone', 'address', 'needBy', 'notes'].forEach((k) => { d.f[k] = form.elements[k].value; });
+      ['name', 'phone', 'email', 'address', 'needBy', 'notes'].forEach((k) => { d.f[k] = form.elements[k].value; });
       d.m = {}; dialog.querySelectorAll('[data-key]').forEach((i) => { if (i.dataset.cm) d.m[i.dataset.key] = Number(i.dataset.cm); });
       localStorage.setItem(DRAFT, JSON.stringify(d));
     } catch (e) { /* ignore */ }
@@ -436,7 +440,7 @@
       Object.entries(order.measurementsCm || {}).forEach(([k, v]) => { if (v != null) m[k] = v; });
       localStorage.setItem(PROFILE, JSON.stringify({
         v: 1, savedAt: new Date().toISOString(),
-        name: order.customer.name, phone: order.customer.phone, address: order.customer.address, m,
+        name: order.customer.name, phone: order.customer.phone, email: order.customer.email || '', address: order.customer.address, m,
       }));
     } catch (e) { /* ignore */ }
   }
@@ -447,7 +451,7 @@
     const p = readProfile();
     if (!p) { renderSavedNotes(); return; }
     state.saved = p;
-    ['name', 'phone', 'address'].forEach((k) => { if (p[k] && !form.elements[k].value) form.elements[k].value = p[k]; });
+    ['name', 'phone', 'email', 'address'].forEach((k) => { if (p[k] && !form.elements[k].value) form.elements[k].value = p[k]; });
     dialog.querySelectorAll('[data-key]').forEach((i) => { if (!i.dataset.cm && p.m[i.dataset.key] != null) setCm(i, p.m[i.dataset.key]); });
     renderSavedNotes();
     markChanged();
@@ -479,7 +483,7 @@
   function forgetProfile() {
     try { localStorage.removeItem(PROFILE); } catch (e) { /* ignore */ }
     if (state.saved) {
-      ['name', 'phone', 'address'].forEach((k) => { if (form.elements[k].value === state.saved[k]) form.elements[k].value = ''; });
+      ['name', 'phone', 'email', 'address'].forEach((k) => { if (form.elements[k].value === state.saved[k]) form.elements[k].value = ''; });
       dialog.querySelectorAll('[data-key]').forEach((i) => {
         const v = state.saved.m[i.dataset.key];
         if (v != null && Number(i.dataset.cm) === v) { delete i.dataset.cm; i.value = ''; }
