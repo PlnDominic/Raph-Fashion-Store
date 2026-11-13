@@ -24,60 +24,82 @@
   <meta name="twitter:title" content="Mave Collection">
   <meta name="twitter:description" content="Rooted in elegance, designed to stand out.">
   <meta name="twitter:image" content="https://www.mavecollections.com/assets/share.jpg">
-  <link rel="preload" as="image" href="assets/hero-frames/0001.webp" type="image/webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/shop.css">
   <link rel="stylesheet" href="css/pdp.css">
+  <link rel="stylesheet" href="css/rail.css">
 </head>
 <body>
 
   <header class="topbar">
+    <div class="topbar__start">
+      <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="menuPanel">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 8h16M4 16h16"/></svg>
+        <span>Menu</span>
+      </button>
+    </div>
     <a class="brand" href="#top" aria-label="Mave Collection, home"><img src="assets/brand/mave-logo.png" alt="" width="40" height="40"><span class="brand__name">Mave <span>Collection</span></span></a>
     <div class="topbar__actions">
-      <a class="topbar__cta" href="#shop">Shop</a>
+      <a class="topbar__cta" href="#shop">Shop <span aria-hidden="true">&#8599;</span></a>
       <button class="topbar__cart" id="cartBtn" type="button" aria-label="Open cart">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1.2 11.2a1.5 1.5 0 0 1-1.5 1.3H7.7a1.5 1.5 0 0 1-1.5-1.3L5 8z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>
         <span class="topbar__count" id="cartCount" hidden>0</span>
       </button>
     </div>
+    <nav class="menu-panel" id="menuPanel" aria-label="Menu" hidden>
+      <a href="#shop">Shop</a>
+      <a href="#info">Delivery &amp; returns</a>
+      <a href="#" data-book-fit>Book a fitting</a>
+      <a href="#" data-order="custom">Your own design</a>
+      <a href="#contact">Contact</a>
+    </nav>
   </header>
 
   <main id="top">
 
-    <!-- Scroll-scrubbed hero: the page is tall, the stage is pinned, scrolling plays the dress turning. -->
-    <section class="hero" id="hero" data-frames="128" data-path="assets/hero-frames/" data-ext="webp">
-      <div class="hero__stage">
-        <canvas class="hero__dress" role="img" aria-label="A model turning in an orange beaded mermaid gown with a kente-print train"></canvas>
-        <noscript><img class="hero__still" src="assets/hero-frames/0001.webp" alt="A model in an orange beaded mermaid gown with a kente-print train"></noscript>
+    <!-- The line-up: the models stand edge-on in a row; hover (or tap) turns one to face you, click opens a closer look. -->
+    <section class="rail" id="hero" aria-label="Mave Collection, the line-up">
+      <div class="rail__stage">
+        <p class="rail__eyebrow"><span>The line-up</span><span>Mave Collection / Accra</span></p>
 
-        <div class="beat beat--intro" data-from="0" data-to="0.28">
-          <p class="eyebrow">Made to measure &middot; Accra</p>
-          <h1>Sewn for<br><em>your</em> body.</h1>
-          <p class="lede">Pick a design, send your measurements, and our team stitches it to fit.</p>
+        <div class="rail__scroll" id="railScroll">
+          <div class="rail__track">
+            <ul class="rail__items" id="railItems"></ul>
+            <div class="rail__bar" aria-hidden="true"></div>
+          </div>
         </div>
 
-        <div class="beat beat--specs" data-from="0.3" data-to="0.66">
-          <p class="eyebrow">Our signature gown</p>
-          <dl class="specs">
-            <div><dt>Silhouette</dt><dd>Fitted mermaid</dd></div>
-            <div><dt>Bodice</dt><dd>Hand-beaded corset</dd></div>
-            <div><dt>Train</dt><dd>Kente print</dd></div>
-            <div><dt>Finish</dt><dd>Matching beaded fan</dd></div>
-          </dl>
+        <div class="rail__caption" aria-live="polite">
+          <p class="rail__name" id="railName">From Accra, with love</p>
+          <p class="rail__hint" id="railHint">Hover a model to turn her. Click to explore.</p>
         </div>
+        <a class="rail__btn" href="#shop">Explore the shop <span aria-hidden="true">&#8599;</span></a>
 
-        <div class="beat beat--cta" data-from="0.7" data-to="9">
-          <p class="eyebrow">Yours, in your size</p>
-          <a class="btn" href="#shop" data-order="custom">Get it tailored</a>
-          <a class="link" href="#shop">Browse the shop</a>
+        <div class="marquee" aria-hidden="true"><div class="marquee__row">
+          <span>From Accra, with love</span><b>&#10022;</b><span>Designed &amp; stitched in Danfa</span><b>&#10022;</b><span>Mave Collection, Accra</span><b>&#10022;</b>
+          <span>From Accra, with love</span><b>&#10022;</b><span>Designed &amp; stitched in Danfa</span><b>&#10022;</b><span>Mave Collection, Accra</span><b>&#10022;</b>
+          <span>From Accra, with love</span><b>&#10022;</b><span>Designed &amp; stitched in Danfa</span><b>&#10022;</b><span>Mave Collection, Accra</span><b>&#10022;</b>
+          <span>From Accra, with love</span><b>&#10022;</b><span>Designed &amp; stitched in Danfa</span><b>&#10022;</b><span>Mave Collection, Accra</span><b>&#10022;</b>
+        </div></div>
+      </div>
+
+      <div class="railfocus" id="railFocus" role="dialog" aria-modal="true" aria-label="A closer look" hidden>
+        <button class="railfocus__close" id="railClose" type="button">Close <span aria-hidden="true">&times;</span></button>
+        <button class="railfocus__nav railfocus__nav--prev" id="railPrev" type="button" aria-label="Previous dress">&#8249;</button>
+        <button class="railfocus__nav railfocus__nav--next" id="railNext" type="button" aria-label="Next dress">&#8250;</button>
+        <div class="railfocus__body">
+          <div class="railfocus__hang"><img id="railBig" alt=""><i class="railfocus__shadow" aria-hidden="true"></i></div>
+          <p class="railfocus__count" id="railCount"></p>
+          <h2 class="railfocus__name" id="railFocusName"></h2>
+          <p class="railfocus__meta" id="railMeta"></p>
+          <div class="railfocus__acts">
+            <button class="btn" type="button" id="railView">View the dress</button>
+            <button class="btn btn--ghost" type="button" id="railTailor">Get it tailored</button>
+          </div>
         </div>
-
-        <div class="hero__loading" aria-live="polite"><span></span></div>
-        <div class="hero__hint" aria-hidden="true">Scroll</div>
-        <div class="hero__progress" aria-hidden="true"><i></i></div>
       </div>
     </section>
 
@@ -148,7 +170,7 @@
 
   </main>
 
-  <footer class="footer">
+  <footer class="footer" id="contact">
     <div class="footer__inner">
       <div class="footer__brand">
         <img src="assets/brand/mave-logo.png" alt="" width="56" height="56">
@@ -368,10 +390,10 @@
   <script src="js/products.js"></script>
   <script src="js/stock.js"></script>
   <script src="js/captcha.js"></script>
-  <script src="js/hero.js"></script>
   <script src="js/shop.js"></script>
   <script src="js/cart.js"></script>
   <script src="js/pdp.js"></script>
+  <script src="js/rail.js"></script>
   <script src="js/fitting.js"></script>
 </body>
 </html>

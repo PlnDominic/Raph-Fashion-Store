@@ -14,23 +14,17 @@ python3 -m http.server 8000
 
 Then open http://localhost:8000.
 
-## Hero
+## Hero: the line-up
 
-`index.html` + `js/hero.js` + `css/style.css`. The hero pins to the screen and scrolling plays a frame sequence of the dress turning (`assets/hero-frames/`). Text beats fade in and out at set scroll points (`data-from` / `data-to` on each `.beat`, 0 to 1).
+`index.html` (`#hero`) + `js/rail.js` + `css/rail.css`. The models stand edge-on in a row on a thin floor line. Hovering one (or tapping her on a phone) turns her to face you; clicking opens a closer look with arrows to move between dresses (and the arrow keys and Escape). A green band of text scrolls along the bottom. The menu sits top left, the logo in the middle, Shop and the cart on the right.
 
-### Changing the hero video
-
-The hero expects a clip of the model on a plain white studio backdrop (generated in Google Flow).
-
-1. Put the new video at `assets/source/hero.mp4`.
-2. Run `python3 scripts/extract_hero_frames.py` (needs ffmpeg, Pillow, numpy). It whitens the backdrop, crops each frame to follow the model, and writes WebP frames to `assets/hero-frames/`.
-3. Set `data-frames` on `#hero` in `index.html` to the frame count the script prints.
+Every dress in `js/products.js` that has a `rail` image stands in the line-up. To add one: put its photo in `assets/source/products/<id>.jpg`, add its crop line to `scripts/make_rail_cutouts.py` and run `python3 scripts/make_rail_cutouts.py <id>` (needs rembg). It cuts the whole model out and writes a transparent `assets/rail/<id>.webp`. Then set `rail: 'assets/rail/<id>.webp'` on the dress.
 
 ## Shop and orders
 
 `js/products.js` is the catalogue: add a dress by adding an object (name, price in GHS, lead time, photos). Shop photos are on a white background: put the original in `assets/source/products/` and run `python3 scripts/cutout_products.py <file>` (needs `pip install "rembg[cpu]"`) to get `assets/products/<file>.webp`. If a photo is small or soft, first run `python3 scripts/enhance_photo.py assets/source/originals/<file> RealESRGAN_x4plus.pth` (AI 4x upscale with Real-ESRGAN, weights from github.com/xinntao/Real-ESRGAN releases), then cut out the result. Leave `price` / `leadTime` as `null` and the card shows "Price on request" and no lead time.
 
-"Get it tailored" (hero and cards) open the order sheet (`js/shop.js`): details, measurements (inches, tailor-style, with range checks), style photos (up to 5, shrunk on the phone before upload) and a review step. A half-finished form is kept in the browser.
+"Get it tailored" (the closer look and the cards) open the order sheet (`js/shop.js`): details, measurements (inches, tailor-style, with range checks), style photos (up to 5, shrunk on the phone before upload) and a review step. A half-finished form is kept in the browser.
 
 Each dress card has two buttons: **Add to cart** adds the ready-made dress to the cart (`js/cart.js`: choose a size, set the quantity, check out with name, phone and delivery address), and **Get it tailored** opens the made-to-measure sheet. A dress only gets the Add to cart button if `readyMade: true` in `js/products.js`; sizes and quantities come from the `product_stock` table in Supabase (see `supabase/README.md`, step 7); `RAPH_CONFIG.sizes` is only a fallback. The cart is kept in the browser.
 

@@ -42,23 +42,6 @@ a { color: inherit; }
 }
 .topbar__cta:hover { background: var(--ink); color: #fff; }
 
-/* ---------- hero ---------- */
-.hero { position: relative; height: 520vh; }
-.hero__stage {
-  position: sticky; top: 0; width: 100%;
-  height: 100vh; height: 100svh;
-  overflow: hidden; background: var(--paper);
-}
-.hero__still { position: absolute; inset: 0; margin: auto; height: 100%; width: auto; max-width: 100%; object-fit: contain; }
-.hero__dress { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-
-/* text beats, faded by JS via --o (opacity) and --y (offset) */
-.beat {
-  position: absolute; z-index: 5;
-  opacity: var(--o, 0); transform: translateY(var(--y, 24px));
-  pointer-events: none; will-change: opacity, transform;
-}
-.beat a { pointer-events: auto; }
 .eyebrow { margin: 0 0 14px; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.28em; text-transform: uppercase; color: var(--ember); }
 h1, h2 { font-family: var(--serif); font-weight: 500; line-height: 1.02; margin: 0; }
 h1 { font-size: clamp(2.8rem, 8.5vw, 6.2rem); }
@@ -66,9 +49,6 @@ h1 em { font-style: italic; color: var(--gold); }
 h2 em { font-style: italic; color: var(--ember); }
 .lede { color: var(--muted); max-width: 30ch; margin: 18px 0 0; font-size: 1rem; }
 
-.specs { margin: 0; display: grid; gap: 14px; }
-.specs dt { font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
-.specs dd { margin: 2px 0 0; font-family: var(--serif); font-size: 1.35rem; font-weight: 500; }
 
 .btn {
   display: inline-block; padding: 16px 34px; border-radius: 999px; text-decoration: none;
@@ -80,53 +60,8 @@ h2 em { font-style: italic; color: var(--ember); }
 .btn:hover { transform: translateY(-2px); background: var(--glow-dark); }
 .link { display: inline-block; margin-left: 22px; font-size: 0.85rem; color: var(--muted); text-decoration: none; }
 
-/* phones: text sits in a white sheet at the bottom, under the dress */
-.beat--intro, .beat--specs, .beat--cta {
-  left: 0; right: 0; bottom: 0;
-  padding: 48px var(--gutter) calc(max(28px, env(safe-area-inset-bottom)) + 36px);
-  background: linear-gradient(to top, #fff 62%, rgba(255, 255, 255, 0));
-}
-.beat--intro .lede { display: none; }   /* phones: keep the dress visible */
-.beat--cta { text-align: center; }
-.beat--cta .link { display: block; margin: 16px 0 0; }
-.beat--specs .specs { grid-template-columns: 1fr 1fr; }
-.beat--specs .specs dd { font-size: 1.1rem; }
-
-/* wide screens: text in the left / right columns beside the dress */
-@media (min-width: 820px) {
-  .beat--intro, .beat--specs, .beat--cta {
-    bottom: auto; top: 50%; right: auto; padding: 0; background: none;
-    transform: translateY(calc(-50% + var(--y, 24px)));
-  }
-  .beat--intro { left: var(--gutter); max-width: 26rem; }
-  .beat--intro .lede { display: block; }
-  .beat--specs { right: var(--gutter); left: auto; width: min(20rem, 26vw); }
-  .beat--specs .specs { grid-template-columns: 1fr; gap: 20px; }
-  .beat--specs .specs dd { font-size: 1.5rem; }
-  .beat--cta { left: var(--gutter); max-width: 26rem; text-align: left; }
-  .beat--cta .eyebrow { margin-bottom: 18px; }
-  .beat--cta .link { display: inline-block; margin: 0 0 0 22px; }
-}
-
-.hero__hint {
-  position: absolute; z-index: 5; left: 50%; bottom: max(16px, env(safe-area-inset-bottom));
-  transform: translateX(-50%); font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted);
-  transition: opacity 0.4s;
-}
-.hero__hint::after {
-  content: ""; display: block; width: 1px; height: 22px; margin: 8px auto 0; background: var(--muted);
-  animation: drip 1.8s ease-in-out infinite; transform-origin: top;
-}
-@keyframes drip { 0% { transform: scaleY(0); } 60% { transform: scaleY(1); } 100% { transform: scaleY(1); opacity: 0; } }
-.hero__progress { position: absolute; z-index: 5; right: 0; top: 0; bottom: 0; width: 2px; background: var(--line); }
-.hero__progress i { display: block; width: 100%; height: 100%; background: var(--glow); transform-origin: top; transform: scaleY(var(--p, 0)); }
-.hero__loading { position: absolute; z-index: 6; left: 0; right: 0; top: 0; height: 2px; transition: opacity 0.4s; }
-.hero__loading span { display: block; height: 100%; width: 100%; background: var(--glow); transform-origin: left; transform: scaleX(var(--l, 0)); }
-.hero.is-loaded .hero__loading { opacity: 0; }
-
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .hero__hint::after { animation: none; }
 }
 
 /* slightly smaller type on large screens and phones */
@@ -138,8 +73,6 @@ h1 { font-size: clamp(2.5rem, 7vw, 5.4rem); }
   .brand img { width: 34px; height: 34px; }
   .eyebrow { font-size: 0.64rem; letter-spacing: 0.24em; }
   .lede { font-size: 0.92rem; }
-  .specs dt { font-size: 0.62rem; }
-  .beat--specs .specs dd { font-size: 0.98rem; }
   .btn { padding: 14px 28px; font-size: 0.74rem; letter-spacing: 0.14em; }
   .topbar__cta { font-size: 0.66rem; padding: 8px 15px; }
   .link { font-size: 0.8rem; }
