@@ -537,3 +537,68 @@ body { font-feature-settings: "tnum" 1, "cv11" 1; }
 }
 .addsize { max-width: 340px; border-top: 0; padding-top: 4px; }
 .appt .acts .btn { flex: none; }
+
+/* ---- orders, minimal: flat list on the left, one calm sheet on the right ---- */
+.orders { grid-template-columns: minmax(300px, 340px) 1fr; gap: 40px; }
+.orders__list { position: sticky; top: 12px; max-height: calc(100dvh - 90px); display: flex; flex-direction: column; }
+.olist { overflow-y: auto; gap: 0; border-top: 1px solid var(--line); }
+.search { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; padding: 10px 2px; margin: 0 0 10px; }
+.search:focus { border-color: var(--green); }
+.chips { gap: 4px; padding-bottom: 12px; }
+.chip { border: 0; background: none; padding: 5px 10px; color: var(--muted); font-weight: 500; }
+.chip b { margin-left: 4px; font-size: .78rem; }
+.chip[aria-pressed="true"] { background: var(--tint); color: var(--green); font-weight: 600; }
+.chip[aria-pressed="true"] b { color: var(--green); }
+.orow { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; padding: 13px 8px 13px 0; grid-template-columns: 3px 1fr auto; gap: 12px; }
+.orow__bar { width: 3px; border-radius: 2px; margin: 4px 0; background: transparent !important; }
+.orow--new .orow__bar { background: #e0a21c !important; }
+.orow--new .orow__who::after { display: none; }
+.orow.is-open { background: var(--tint); box-shadow: none; border-radius: 8px; border-bottom-color: transparent; }
+.orow:hover { background: #f3f5f2; border-color: transparent; border-bottom-color: var(--line); }
+.orow__who { font-size: .93rem; }
+.orow__sub { font-size: .8rem; }
+.orow .pill { background: none; padding: 0; font-size: .75rem; }
+.orow .pill--new { color: #b07a00; }
+.orow .pill--delivered { color: var(--muted); }
+.orow__total { font-size: .8rem; }
+
+/* the order sheet: no boxes, just hairlines and spacing */
+.od { gap: 0; max-width: 640px; }
+.od > .card, .od > details.card { background: none; border: 0; border-radius: 0; padding: 22px 0; border-top: 1px solid var(--line); margin: 0; }
+.od > .card:first-of-type { border-top: 1px solid var(--line); }
+.od > details.fold { padding: 0; }
+.od > details.fold > summary { padding: 16px 0; }
+.od > details.fold > :not(summary) { margin: 0 0 18px; }
+.od__head { padding: 0 0 20px; }
+.od__ref { font: 600 1.5rem/1.15 var(--sans); }
+.od__who { font-size: .82rem; }
+.od__acts .btn { min-height: 32px; padding: 4px 12px; font-size: .82rem; }
+.od__acts .btn--wa { background: none; color: var(--wa); border: 1px solid rgba(31, 168, 85, .35); }
+.od__acts .btn--wa:hover { background: #eef9f2; box-shadow: none; }
+.stage { gap: 10px; }
+.stage .pill { font-size: .8rem; padding: 4px 12px; }
+.tiny { border-top: 0; padding-top: 0; margin-top: 14px; font-size: .82rem; }
+.seg { border: 0; background: var(--tint); border-radius: 10px; padding: 3px; gap: 2px; }
+.seg button { border: 0 !important; border-radius: 8px; padding: 6px 14px; font-size: .84rem; }
+.seg button[aria-pressed="true"] { background: #fff; color: var(--green); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+.seg button[aria-pressed="true"].unpaid { background: #fff; color: var(--amber); }
+.seg button[aria-pressed="true"].refunded { background: #fff; color: var(--red); }
+.items li { font-size: .9rem; padding: 10px 0; }
+.totalrow { margin-top: 14px; }
+.kv { grid-template-columns: repeat(2, 1fr); gap: 16px 24px; }
+.od > .card .meas, .od .meas > div { background: none; padding: 4px 0; }
+.od .meas { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 6px 16px; }
+.danger-link { margin-top: 18px; padding: 0; }
+.empty { border: 0; background: none; }
+@media (max-width: 959px) {
+  .orders { gap: 0; }
+  .orders__list { position: static; max-height: none; }
+  .olist { overflow: visible; }
+  .od > .card, .od > details.card { padding: 18px 0; }
+  .od { max-width: none; }
+  .od__head { background: var(--bg); }
+  .kv { grid-template-columns: repeat(2, 1fr); gap: 14px 16px; }
+}
+.od .u-pre.u-mt14 { margin-top: 18px; padding-top: 14px; }
+.od .totalrow .field input { min-height: 36px; padding: 6px 10px; }
+.od .totalrow .field { width: 120px; }
