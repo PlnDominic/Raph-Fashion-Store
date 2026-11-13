@@ -114,7 +114,7 @@ If the fittings SQL has not been run, the booking screen simply says it cannot l
 
 ## 10. Admin dashboard (/admin.html)
 
-A private page for the team at `https://www.mavecollections.com/admin.html`: see every order, move it along (new, confirmed, cutting, sewing, ready, delivered), mark payments, set a price for "price to confirm" orders, read measurements and style photos, keep internal notes, manage fitting appointments (done, cancel, close a day) and edit stock.
+A private page for the team at `https://www.mavecollections.com/admin` (or `/admin.html`): see every order, move it along (new, confirmed, cutting, sewing, ready, delivered), mark payments, set a price for "price to confirm" orders, read measurements and style photos, keep internal notes, manage fitting appointments (done, cancel, close a day) and edit stock.
 
 1. **Run the admin SQL once:** SQL Editor, paste `supabase/migrations/20261106000000_admin.sql`, Run. (It only records failed sign-in attempts.)
 2. **Redeploy the function** with the latest `supabase/functions/place-order/index.ts`.
