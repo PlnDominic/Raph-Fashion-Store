@@ -8,7 +8,13 @@
   const money = (n) => `GHS\u00a0${Number(n).toLocaleString('en-GH')}`;
   const dresses = (window.PRODUCTS || []).filter((p) => p.rail);
   const N = dresses.length;
-  if (!N) return;
+  if (!N) {   // no dress has a line-up photo: show a quiet headline instead of an empty stage
+    $('railName').textContent = 'Mave Collection';
+    $('railMeta').textContent = 'Rooted in elegance, designed to stand out.';
+    document.querySelector('.carousel').hidden = true;
+    ['railView', 'railTailor', 'railPlay'].forEach((id) => { $(id).hidden = true; });
+    return;
+  }
   let cur = 0;
 
   list.innerHTML = dresses.map((p, i) => `

@@ -45,7 +45,7 @@ const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') ?? '*';
 const cors = {
   'Access-Control-Allow-Origin': allowedOrigin,
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'content-type, authorization, apikey, x-client-info',
+  'Access-Control-Allow-Headers': 'content-type, authorization, apikey, x-client-info, x-admin-token',
   'Vary': 'Origin',
 };
 
@@ -554,7 +554,17 @@ async function handleAdmin(
   if (password.length < 12) {
     return json({ error: 'not_set_up', message: 'The admin password has not been set up yet (secret ADMIN_PASSWORD, at least 12 characters).' }, 503);
   }
-  if (Number(req.headers.get('content-length') ?? 0) > 20_000) return json({ error: 'Too large' }, 413);
+  const tokenValid = async (t: string) => {
+    const [e, g] = String(t ?? '').split('.');
+    const n = Number(e);
+    return !!g && isFinite(n) && n >= Date.now() && safeEqual(g, await hmac(adminKey(password), 'admin.' + n));
+  };
+  // photo uploads are big, so their token travels in a header and is checked before the body is read
+  const headerToken = req.headers.get('x-admin-token');
+  if (headerToken !== null) {
+    if (!(await tokenValid(headerToken))) return json({ error: 'signed_out', message: 'Please sign in again.' }, 401);
+    if (Number(req.headers.get('content-length') ?? 0) > 8_000_000) return json({ error: 'Too large', message: 'That photo is too large.' }, 413);
+  } else if (Number(req.headers.get('content-length') ?? 0) > 20_000) return json({ error: 'Too large' }, 413);
   // deno-lint-ignore no-explicit-any
   let b: any;
   try { b = await req.json(); } catch { return json({ error: 'Could not read the request.' }, 400); }
@@ -584,11 +594,10 @@ async function handleAdmin(
   }
 
   // ---- everything else needs a valid token ----
-  const [expStr, sig] = String(b?.token ?? '').split('.');
-  const exp = Number(expStr);
-  if (!sig || !isFinite(exp) || exp < Date.now() || !safeEqual(sig, await hmac(adminKey(password), 'admin.' + exp))) {
+  if (headerToken === null && !(await tokenValid(b?.token))) {
     return json({ error: 'signed_out', message: 'Please sign in again.' }, 401);
   }
+  if (headerToken !== null && action !== 'admin_upload_image') return json({ error: 'Unknown request' }, 400);
 
   const fail = (e: { message?: string } | null, what: string) => {
     console.error('admin', what, e?.message);
@@ -685,6 +694,116 @@ async function handleAdmin(
     return json({ ok: true });
   }
 
+
+  // ---- content management: dresses, photos and site text ----
+  if (action === 'admin_catalogue') {
+    const [p, c] = await Promise.all([
+      supabase.from('products').select('*').order('sort').order('created_at'),
+      supabase.from('site_content').select('key,value'),
+    ]);
+    if (p.error) return fail(p.error, 'catalogue');
+    return json({ products: p.data ?? [], content: Object.fromEntries(((c.data ?? []) as Array<{ key: string; value: unknown }>).map((r) => [r.key, r.value])) });
+  }
+
+  if (action === 'admin_upload_image') {
+    const mime = String(b?.mime ?? '');
+    const ext = ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' } as Record<string, string>)[mime];
+    if (!ext) return json({ error: 'Bad photo', message: 'Use a JPEG, PNG or WebP photo.' }, 400);
+    let bytes: Uint8Array;
+    try { bytes = Uint8Array.from(atob(String(b?.data ?? '')), (ch) => ch.charCodeAt(0)); } catch { return json({ error: 'Bad photo', message: 'Could not read that photo.' }, 400); }
+    if (bytes.length < 200 || bytes.length > 5_000_000) return json({ error: 'Bad photo', message: 'That photo is too small or too large (5 MB at most).' }, 400);
+    const folder = String(b?.folder ?? 'dresses').replace(/[^a-z0-9-]/gi, '').slice(0, 40) || 'dresses';
+    const path = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+    const up = await supabase.storage.from('site-images').upload(path, bytes, { contentType: mime, cacheControl: '31536000', upsert: false });
+    if (up.error) return fail(up.error, 'upload');
+    const { data: pub } = supabase.storage.from('site-images').getPublicUrl(path);
+    return json({ url: pub.publicUrl });
+  }
+
+  if (action === 'admin_product_save') {
+    const q = b?.product ?? {};
+    const name = String(q.name ?? '').trim();
+    if (name.length < 1 || name.length > 120) return json({ error: 'Bad dress', message: 'Give the dress a name (up to 120 characters).' }, 400);
+    let id = String(q.id ?? '').trim();
+    const isNew = !id;
+    if (isNew) {
+      id = name.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 56) || 'dress';
+      const { data: taken } = await supabase.from('products').select('id').like('id', `${id}%`);
+      const ids = new Set(((taken ?? []) as Array<{ id: string }>).map((r) => r.id));
+      if (ids.has(id)) { let n = 2; while (ids.has(`${id}-${n}`)) n++; id = `${id}-${n}`; }
+    } else if (!/^[a-z0-9][a-z0-9-]{1,60}$/.test(id)) return json({ error: 'Bad dress' }, 400);
+    const price = q.price === null || q.price === '' || q.price === undefined ? null : Number(q.price);
+    if (price !== null && (!isFinite(price) || price < 0 || price > 1_000_000)) return json({ error: 'Bad dress', message: 'The price must be a number, or empty for "price on request".' }, 400);
+    // photos must be ones uploaded to our own bucket, or files that ship with the site
+    const ours = `${Deno.env.get('SUPABASE_URL') ?? ''}/storage/v1/object/public/site-images/`;
+    const url = (v: unknown) => {
+      const t = typeof v === 'string' ? v.trim() : '';
+      return t && t.length <= 600 && (t.startsWith(ours) || /^assets\/[\w./-]+$/.test(t)) ? t : null;
+    };
+    const gallery = (Array.isArray(q.gallery) ? q.gallery : []).map(url).filter((x: string | null): x is string => !!x).slice(0, 8);
+    const scale = Number(q.rail_scale ?? 1);
+    const row = {
+      id, name, price,
+      ready_made: q.ready_made !== false,
+      lead_time: typeof q.lead_time === 'string' && q.lead_time.trim() ? q.lead_time.trim().slice(0, 60) : null,
+      card_image: url(q.card_image), rail_image: url(q.rail_image),
+      rail_scale: isFinite(scale) ? Math.min(1.2, Math.max(0.4, Math.round(scale * 100) / 100)) : 1,
+      gallery, visible: q.visible !== false,
+    };
+    if (isNew) {
+      const { data: last } = await supabase.from('products').select('sort').order('sort', { ascending: false }).limit(1);
+      (row as Record<string, unknown>).sort = (((last ?? [])[0] as { sort?: number } | undefined)?.sort ?? 0) + 10;
+    }
+    const { error } = await supabase.from('products').upsert(row, { onConflict: 'id' });
+    if (error) return fail(error, 'product save');
+    // a brand-new dress can start with stock in every size
+    const start = Number(b?.start_qty);
+    if (isNew && Number.isInteger(start) && start > 0 && start <= 99 && row.ready_made) {
+      await supabase.from('product_stock').upsert(['UK 8', 'UK 10', 'UK 12', 'UK 14', 'UK 16', 'UK 18', 'UK 20', 'UK 22'].map((size) => ({ product_id: id, size, qty: start })), { onConflict: 'product_id,size', ignoreDuplicates: true });
+    }
+    return json({ ok: true, id });
+  }
+
+  if (action === 'admin_product_delete') {
+    const id = String(b?.id ?? '');
+    if (!/^[a-z0-9][a-z0-9-]{1,60}$/.test(id)) return json({ error: 'Bad request' }, 400);
+    const { error } = await supabase.from('products').delete().eq('id', id);
+    if (error) return fail(error, 'product delete');
+    return json({ ok: true });
+  }
+
+  if (action === 'admin_products_order') {
+    const ids = Array.isArray(b?.ids) ? b.ids.filter((x: unknown) => typeof x === 'string' && /^[a-z0-9][a-z0-9-]{1,60}$/.test(x)).slice(0, 200) : [];
+    for (let i = 0; i < ids.length; i++) await supabase.from('products').update({ sort: (i + 1) * 10 }).eq('id', ids[i]);
+    return json({ ok: true });
+  }
+
+  if (action === 'admin_content_save') {
+    const key = String(b?.key ?? '');
+    const v = b?.value;
+    const text = (x: unknown, max: number) => String(x ?? '').replace(/\0/g, '').trim().slice(0, max);
+    let value: unknown;
+    if (key === 'marquee') {
+      value = (Array.isArray(v) ? v : []).map((x) => text(x, 80)).filter(Boolean).slice(0, 8);
+      if ((value as string[]).length === 0) return json({ error: 'Bad content', message: 'Add at least one line.' }, 400);
+    } else if (key === 'contacts') {
+      const wa = text(v?.whatsapp, 20).replace(/\D/g, '');
+      const email = text(v?.email, 120);
+      if (wa && (wa.length < 11 || wa.length > 15)) return json({ error: 'Bad content', message: 'The WhatsApp number should be in full, for example 233541791986.' }, 400);
+      if (email && !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email)) return json({ error: 'Bad content', message: 'That email address does not look right.' }, 400);
+      value = {
+        whatsapp: wa,
+        phones: (Array.isArray(v?.phones) ? v.phones : []).map((x: unknown) => text(x, 24)).filter((x: string) => x.replace(/\D/g, '').length >= 9).slice(0, 4),
+        email, address: text(v?.address, 120),
+      };
+    } else if (key === 'info') {
+      value = (Array.isArray(v) ? v : []).map((x) => ({ title: text(x?.title, 100), body: text(x?.body, 2500) })).filter((x) => x.title && x.body).slice(0, 12);
+    } else return json({ error: 'Bad content' }, 400);
+    const { error } = await supabase.from('site_content').upsert({ key, value }, { onConflict: 'key' });
+    if (error) return fail(error, 'content save');
+    return json({ ok: true });
+  }
+
   return json({ error: 'Unknown request' }, 400);
 }
 
@@ -697,6 +816,25 @@ Deno.serve(async (req: Request) => {
   });
 
   // the shop asks what is in stock (a few seconds of caching keeps this cheap)
+  // the site asks for its dresses and texts (a few seconds of caching keeps this cheap)
+  if (req.method === 'GET' && new URL(req.url).searchParams.has('catalogue')) {
+    try {
+      const [p, c] = await Promise.all([
+        supabase.from('products').select('id,name,price,ready_made,lead_time,card_image,rail_image,rail_scale,gallery').eq('visible', true).order('sort').order('created_at'),
+        supabase.from('site_content').select('key,value'),
+      ]);
+      if (p.error) throw new Error(p.error.message);
+      const products = ((p.data ?? []) as Array<Record<string, unknown>>).map((r) => ({
+        id: r.id, name: r.name, price: r.price === null ? null : Number(r.price), readyMade: r.ready_made, leadTime: r.lead_time,
+        image: r.card_image, gallery: r.gallery ?? [], rail: r.rail_image ?? null, railScale: Number(r.rail_scale ?? 1),
+      }));
+      const content = Object.fromEntries(((c.data ?? []) as Array<{ key: string; value: unknown }>).map((r) => [r.key, r.value]));
+      return new Response(JSON.stringify({ products, content }), { headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=15' } });
+    } catch (e) {
+      console.error('catalogue read failed', e instanceof Error ? e.message : String(e));
+      return json({ error: 'Catalogue is not available' }, 500);
+    }
+  }
   if (req.method === 'GET' && new URL(req.url).searchParams.has('fittings')) {
     try {
       const { days } = await freeFittings(supabase);

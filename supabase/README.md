@@ -128,6 +128,24 @@ A private page for the team at `https://www.mavecollections.com/admin.html`: see
 - To sign everyone out immediately, change `ADMIN_PASSWORD` (old tokens stop working).
 - Customers' text is shown as plain text, never as page code.
 
+## 11. Managing dresses and site text from the admin page
+
+The **Dresses** and **Site text** tabs on `/admin.html` change what the website shows, without touching any code.
+
+- **Dresses:** add a dress (name, price, ready-made or made-to-order, lead time, photos), edit one, hide or show it, put the dresses in the order you like, or delete one. Each photo is shrunk in your browser before it is uploaded. The **main photo** appears in the shop and on the dress page. The optional **line-up photo** is for the homepage carousel: the whole model cut out on a transparent background (PNG or WebP). A dress without one still sells in the shop but is not in the carousel. A new ready-made dress can start with stock in every size UK 8 to 22; later changes are under **Stock**.
+- **Site text:** the scrolling green band, the footer contacts (WhatsApp number, phones, email, place) and the "Good to know" questions and answers. In long answers `**two stars**` make bold, `[link text](https://address)` makes a link, and a line starting with `- ` becomes a bullet.
+
+**Set it up (once):**
+1. SQL Editor, paste `supabase/migrations/20261113000000_content.sql`, Run. It creates the tables and a public photo folder, and fills them with exactly what the site shows today.
+2. Redeploy the function with the latest `supabase/functions/place-order/index.ts`.
+
+**How it works:** when a visitor opens the site, a small script (`js/boot.js`) asks the function for the current dresses and texts and uses them. If the function is slow (more than about 2 seconds) or down, the site falls back to the built-in list in `js/products.js` and the text written in `index.html`, so it never shows an empty shop. Changes show within about 15 seconds. Photos you upload are stored in the `site-images` bucket (Storage).
+
+**Good to know**
+- Photos on the dress cards should be tall (about 5 wide to 8 high) so they fit the card.
+- The line-up cut-out needs a transparent background. Removing a background is not done in the admin page; use `scripts/make_rail_cutouts.py` (see the main README) or any background-remover tool, then upload the result.
+- Deleting a dress does not touch past orders. If you only want it off the website for a while, use **Hide**.
+
 ## Before you take real payments (Paystack)
 Prices are currently sent from the browser, and the function stores what it is sent. That is fine while the team confirms every order by phone, but **before online payment goes live the prices must live in the database** and the function must look them up itself, otherwise a customer could change a price. Do that in the same step as the Paystack integration.
 

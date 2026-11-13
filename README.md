@@ -20,6 +20,10 @@ Then open http://localhost:8000.
 
 Every dress in `js/products.js` that has a `rail` image is in the line-up. To add one: put its photo in `assets/source/products/<id>.jpg`, add its crop line to `scripts/make_rail_cutouts.py` and run `python3 scripts/make_rail_cutouts.py <id>` (needs rembg). It cuts the whole model out and writes a transparent `assets/rail/<id>.webp`. Then set `rail: 'assets/rail/<id>.webp'` on the dress (`railScale` makes a photo that stops at the hips stand a little smaller).
 
+## Managing content
+
+Dresses and site text are managed from `/admin.html` (the Dresses and Site text tabs); see step 11 of `supabase/README.md`. `js/products.js` and the text in `index.html` stay as the built-in fallback used when the database cannot be reached.
+
 ## Shop and orders
 
 `js/products.js` is the catalogue: add a dress by adding an object (name, price in GHS, lead time, photos). Shop photos are on a white background: put the original in `assets/source/products/` and run `python3 scripts/cutout_products.py <file>` (needs `pip install "rembg[cpu]"`) to get `assets/products/<file>.webp`. If a photo is small or soft, first run `python3 scripts/enhance_photo.py assets/source/originals/<file> RealESRGAN_x4plus.pth` (AI 4x upscale with Real-ESRGAN, weights from github.com/xinntao/Real-ESRGAN releases), then cut out the result. Leave `price` / `leadTime` as `null` and the card shows "Price on request" and no lead time.

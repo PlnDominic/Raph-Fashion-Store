@@ -8,9 +8,9 @@
   const KIND = { 'ready-made': 'Ready-made', 'made-to-measure': 'Made to measure', custom: 'Custom design' };
   const MEAS = [['bust', 'Bust'], ['underbust', 'Underbust'], ['waist', 'Waist'], ['hips', 'Hips'], ['shoulder', 'Shoulder'], ['bustPoint', 'Bust point'],
     ['shoulderWaist', 'Shoulder to waist'], ['sleeveLength', 'Sleeve length'], ['upperArm', 'Round arm'], ['dressLength', 'Full length'], ['height', 'Height']];
-  const names = {}; (window.PRODUCTS || []).forEach((p) => { names[p.id] = p.name; });
+  const names = {};
 
-  const S = { token: null, orders: [], fittings: [], stock: [], tab: 'orders', filter: 'all', q: '', open: null };
+  const S = { token: null, orders: [], fittings: [], stock: [], products: [], content: {}, tab: 'orders', filter: 'all', q: '', open: null, editing: null };
   try { S.token = sessionStorage.getItem('mave_admin'); } catch (e) { /* ignore */ }
 
   const ghs = (n) => (n == null ? 'Price to confirm' : 'GHS ' + Number(n).toLocaleString('en-GH'));
@@ -57,8 +57,9 @@
   // ---------- load ----------
   async function loadAll(announce) {
     try {
-      const [o, f, s] = await Promise.all([api('admin_orders'), api('admin_fittings'), api('admin_stock')]);
-      S.orders = o.orders; S.fittings = f.fittings; S.stock = s.stock;
+      const [o, f, s, c] = await Promise.all([api('admin_orders'), api('admin_fittings'), api('admin_stock'), api('admin_catalogue').catch(() => ({ products: [], content: {}, missing: true }))]);
+      S.orders = o.orders; S.fittings = f.fittings; S.stock = s.stock; S.products = c.products; S.content = c.content; S.noCms = !!c.missing;
+      S.products.forEach((p) => { names[p.id] = p.name; });
       render(); if (announce) toast('Up to date');
     } catch (x) { if (S.token) toast(x.message, true); }
   }
@@ -68,9 +69,9 @@
     const b = e.target.closest('[data-tab]'); if (!b) return;
     S.tab = b.dataset.tab;
     document.querySelectorAll('#tabs button').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
-    ['orders', 'fittings', 'stock'].forEach((t) => { $('tab-' + t).hidden = t !== S.tab; });
+    ['orders', 'fittings', 'stock', 'dresses', 'text'].forEach((t) => { $('tab-' + t).hidden = t !== S.tab; });
   });
-  function render() { renderStats(); renderChips(); renderOrders(); renderFittings(); renderStock(); }
+  function render() { renderStats(); renderChips(); renderOrders(); renderFittings(); renderStock(); renderDresses(); renderText(); }
 
   // ---------- orders ----------
   const live = (o) => o.status !== 'cancelled';
@@ -218,7 +219,7 @@
   function renderStock() {
     const by = {};
     S.stock.forEach((r) => { (by[r.product_id] = by[r.product_id] || []).push(r); });
-    (window.PRODUCTS || []).forEach((p) => { if (p.readyMade && !by[p.id]) by[p.id] = []; });
+    S.products.forEach((p) => { if (p.ready_made && !by[p.id]) by[p.id] = []; });
     const ids = Object.keys(by);
     if (!ids.length) { $('stockList').innerHTML = '<div class="empty">No stock rows yet. Run the stock SQL first.</div>'; return; }
     $('stockList').innerHTML = ids.map((id) => `<div class="prod" data-p="${esc(id)}"><h3>${esc(names[id] || id)}</h3>
@@ -258,6 +259,187 @@
     await saveStock(id, row.dataset.s, v, row); renderStockSoon();
   });
   let rs; function renderStockSoon() { clearTimeout(rs); rs = setTimeout(() => { if (!document.activeElement || !document.activeElement.closest('#stockList')) renderStock(); }, 600); }
+
+
+  // ---------- dresses ----------
+  const SIZES = ['UK 8', 'UK 10', 'UK 12', 'UK 14', 'UK 16', 'UK 18', 'UK 20', 'UK 22'];
+  const NEW = { id: '', name: '', price: '', ready_made: true, lead_time: '', card_image: '', rail_image: '', rail_scale: 1, gallery: [], visible: true };
+
+  function renderDresses() {
+    if (S.noCms) {
+      $('dressList').innerHTML = '<div class="empty">Managing dresses here needs the content SQL and the latest function. See step 11 in supabase/README.md.</div>';
+      $('addDress').hidden = true; return;
+    }
+    $('addDress').hidden = false;
+    $('dressForm').innerHTML = S.editing ? formHtml(S.editing) : '';
+    if (!S.products.length) { $('dressList').innerHTML = '<div class="empty">No dresses yet. Add the first one.</div>'; return; }
+    $('dressList').innerHTML = S.products.map((p, i) => `
+      <article class="dress${p.visible ? '' : ' is-off'}" data-id="${esc(p.id)}">
+        ${p.card_image ? `<img class="dress__img" src="${esc(p.card_image)}" alt="">` : '<span class="dress__img dress__img--none">No photo</span>'}
+        <div><h3>${esc(p.name)}</h3>
+          <p>${p.price == null ? 'Price on request' : esc(ghs(p.price))} &middot; ${p.ready_made ? 'Ready-made' : 'Made to order only'}${p.lead_time ? ' &middot; ' + esc(p.lead_time) : ''}</p>
+          <p>${p.visible ? '' : '<span class="pill pill--cancelled">Hidden</span> '}${p.rail_image ? '' : '<span class="pill">Not in the homepage line-up</span>'}</p></div>
+        <div class="acts">
+          <button class="ghost" data-dact="edit">Edit</button>
+          <button class="ghost" data-dact="up" ${i === 0 ? 'disabled' : ''} aria-label="Move up">&uarr;</button>
+          <button class="ghost" data-dact="down" ${i === S.products.length - 1 ? 'disabled' : ''} aria-label="Move down">&darr;</button>
+          <button class="ghost" data-dact="vis">${p.visible ? 'Hide' : 'Show'}</button>
+          <button class="ghost danger" data-dact="del">Delete</button>
+        </div>
+      </article>`).join('');
+  }
+
+  function formHtml(p) {
+    const isNew = !p.id;
+    const photo = (key, label, hint) => `<div class="field wide">${label}<span class="hint">${hint}</span>
+      <div class="photo" data-photo="${key}">${p[key] ? `<img src="${esc(p[key])}" alt="">` : '<span class="none">None</span>'}
+        <input type="file" accept="image/*" data-file="${key}">${p[key] ? `<button class="ghost danger" type="button" data-clear="${key}">Remove</button>` : ''}</div></div>`;
+    return `<div class="panel form" id="dform"><h3>${isNew ? 'Add a dress' : 'Edit ' + esc(p.name)}</h3>
+      <div class="formgrid">
+        <label class="field">Name<input type="text" data-f="name" value="${esc(p.name)}" maxlength="120"></label>
+        <label class="field">Price (GHS)<input type="number" min="0" step="1" data-f="price" value="${p.price ?? ''}" placeholder="empty = price on request"></label>
+        <label class="field">Lead time <span style="text-transform:none;letter-spacing:0">(optional)</span><input type="text" data-f="lead_time" value="${esc(p.lead_time || '')}" maxlength="60" placeholder="e.g. 2 to 3 weeks"></label>
+        <label class="field">How it is sold<select data-f="ready_made"><option value="1"${p.ready_made ? ' selected' : ''}>Ready-made (add to cart) and made to measure</option><option value="0"${p.ready_made ? '' : ' selected'}>Made to order only</option></select></label>
+        ${photo('card_image', 'Main photo', 'Shown in the shop and on the dress page. Any background. A tall photo of the whole outfit works best.')}
+        ${photo('rail_image', 'Line-up photo (optional)', 'For the homepage line-up: the whole model cut out on a transparent background (PNG or WebP). Without it the dress still sells in the shop but is not in the line-up.')}
+        <label class="field">Size in the line-up<input type="number" min="0.4" max="1.2" step="0.05" data-f="rail_scale" value="${p.rail_scale ?? 1}"><span class="hint">1 is full size. Use about 0.85 for a photo that stops at the hips.</span></label>
+        <div class="field wide">More photos <span class="hint">Extra angles on the dress page.</span>
+          <div class="thumbs" id="gal">${(p.gallery || []).map((u, i) => `<figure><img src="${esc(u)}" alt=""><button type="button" data-gdel="${i}" aria-label="Remove">&times;</button></figure>`).join('')}<input type="file" accept="image/*" multiple data-file="gallery"></div></div>
+        ${isNew ? '<label class="field">Starting stock<input type="number" min="0" max="99" step="1" data-f="start_qty" value="5"><span class="hint">How many of each size UK 8 to 22 (only for ready-made). Change it any time under Stock.</span></label>' : ''}
+      </div>
+      <div class="checks"><label><input type="checkbox" data-f="visible" ${p.visible ? 'checked' : ''}> Show this dress on the website</label></div>
+      <div class="row"><button class="btn small" data-dsave>Save dress</button><button class="ghost" data-dcancel>Cancel</button><span class="err" id="dErr" role="alert"></span></div></div>`;
+  }
+
+  // shrink a photo before it is sent (the line-up photo keeps its transparent background)
+  async function shrink(file, transparent) {
+    const bmp = await createImageBitmap(file);
+    const max = transparent ? 1100 : 1600;
+    const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const cv = document.createElement('canvas'); cv.width = Math.round(bmp.width * k); cv.height = Math.round(bmp.height * k);
+    cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
+    const mime = transparent ? 'image/webp' : 'image/jpeg';
+    const blob = await new Promise((res) => cv.toBlob(res, mime, transparent ? 0.9 : 0.88));
+    const b64 = await new Promise((res) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.readAsDataURL(blob); });
+    return { mime: blob.type || mime, data: b64 };
+  }
+  async function uploadPhoto(file, transparent) {
+    const { mime, data } = await shrink(file, transparent);
+    const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': S.token }, body: JSON.stringify({ action: 'admin_upload_image', mime, data, folder: 'dresses' }) });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) { if (j.error === 'signed_out') signOut(true); throw new Error(j.message || 'Could not upload that photo.'); }
+    return j.url;
+  }
+  const readForm = () => {
+    const f = (k) => document.querySelector(`#dform [data-f="${k}"]`);
+    const e = S.editing;
+    e.name = f('name').value.trim();
+    e.price = f('price').value.trim() === '' ? null : Number(f('price').value);
+    e.lead_time = f('lead_time').value.trim();
+    e.ready_made = f('ready_made').value === '1';
+    e.rail_scale = Number(f('rail_scale').value) || 1;
+    e.visible = f('visible').checked;
+    if (f('start_qty')) e.start_qty = Number(f('start_qty').value) || 0;
+  };
+
+  $('addDress').addEventListener('click', () => { S.editing = JSON.parse(JSON.stringify(NEW)); renderDresses(); $('dressForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+
+  $('dressForm').addEventListener('change', async (e) => {
+    const inp = e.target.closest('[data-file]'); if (!inp || !inp.files.length) return;
+    readForm();
+    const err = $('dErr'); err.textContent = 'Uploading…';
+    try {
+      if (inp.dataset.file === 'gallery') {
+        for (const file of [...inp.files].slice(0, 8)) { if (S.editing.gallery.length < 8) S.editing.gallery.push(await uploadPhoto(file, false)); }
+      } else S.editing[inp.dataset.file] = await uploadPhoto(inp.files[0], inp.dataset.file === 'rail_image');
+      renderDresses(); $('dErr').textContent = '';
+    } catch (x) { err.textContent = x.message; }
+  });
+  $('dressForm').addEventListener('click', async (e) => {
+    const clr = e.target.closest('[data-clear]');
+    if (clr) { readForm(); S.editing[clr.dataset.clear] = ''; renderDresses(); return; }
+    const gd = e.target.closest('[data-gdel]');
+    if (gd) { readForm(); S.editing.gallery.splice(Number(gd.dataset.gdel), 1); renderDresses(); return; }
+    if (e.target.closest('[data-dcancel]')) { S.editing = null; renderDresses(); return; }
+    if (e.target.closest('[data-dsave]')) {
+      e.preventDefault(); readForm();
+      const p = S.editing; const err = $('dErr');
+      if (!p.name) { err.textContent = 'Give the dress a name.'; return; }
+      if (p.price !== null && (isNaN(p.price) || p.price < 0)) { err.textContent = 'The price must be a number.'; return; }
+      if (!p.card_image) { err.textContent = 'Add a main photo.'; return; }
+      err.textContent = 'Saving…';
+      try {
+        await api('admin_product_save', { product: p, start_qty: p.start_qty });
+        S.editing = null; toast('Dress saved'); await loadAll();
+      } catch (x) { err.textContent = x.message; }
+    }
+  });
+  $('dressList').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-dact]'); if (!b) return;
+    const id = b.closest('.dress').dataset.id; const i = S.products.findIndex((p) => p.id === id); const p = S.products[i];
+    try {
+      if (b.dataset.dact === 'edit') { S.editing = JSON.parse(JSON.stringify(p)); renderDresses(); $('dressForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+      if (b.dataset.dact === 'vis') { await api('admin_product_save', { product: Object.assign({}, p, { visible: !p.visible }) }); toast(p.visible ? 'Hidden from the website' : 'Showing on the website'); }
+      if (b.dataset.dact === 'del') {
+        if (!confirm(`Delete ${p.name}? It disappears from the website. Past orders keep their details. (To hide it for a while instead, use Hide.)`)) return;
+        await api('admin_product_delete', { id }); toast('Dress deleted');
+      }
+      if (b.dataset.dact === 'up' || b.dataset.dact === 'down') {
+        const j = i + (b.dataset.dact === 'up' ? -1 : 1); if (j < 0 || j >= S.products.length) return;
+        const ids = S.products.map((x) => x.id); [ids[i], ids[j]] = [ids[j], ids[i]];
+        await api('admin_products_order', { ids }); toast('Order saved');
+      }
+      await loadAll();
+    } catch (x) { toast(x.message, true); }
+  });
+
+  // ---------- site text ----------
+  function renderText() {
+    if (S.noCms) { $('textBlocks').innerHTML = '<div class="empty">Editing the site text needs the content SQL and the latest function. See step 11 in supabase/README.md.</div>'; return; }
+    const open = document.activeElement && document.activeElement.closest('#textBlocks');
+    if (open) return;   // don't rebuild the forms under someone who is typing
+    const c = S.content || {};
+    const mq = Array.isArray(c.marquee) ? c.marquee : [];
+    const k = c.contacts || {};
+    const info = Array.isArray(c.info) ? c.info : [];
+    $('textBlocks').innerHTML = `
+      <div class="textblock" data-block="marquee"><h3>Scrolling band</h3><p class="note">The green band along the bottom of the homepage. One phrase per line.</p>
+        <textarea rows="4" data-v>${esc(mq.join('\n'))}</textarea><div class="row" style="margin-top:10px"><button class="ghost" data-tsave>Save</button></div></div>
+
+      <div class="textblock" data-block="contacts"><h3>Contacts</h3><p class="note">Shown in the footer.</p>
+        <div class="formgrid">
+          <label class="field">WhatsApp number (in full)<input type="text" data-k="whatsapp" value="${esc(k.whatsapp || '')}" placeholder="233541791986"></label>
+          <label class="field">Email<input type="email" data-k="email" value="${esc(k.email || '')}"></label>
+          <label class="field">Place<input type="text" data-k="address" value="${esc(k.address || '')}"></label>
+          <label class="field">Phone numbers to call (one per line)<textarea rows="3" data-k="phones">${esc((k.phones || []).join('\n'))}</textarea></label>
+        </div><button class="ghost" data-tsave>Save</button></div>
+
+      <div class="textblock" data-block="info"><h3>Good to know</h3><p class="note">The questions and answers near the bottom of the homepage.</p>
+        <div id="infoItems">${info.map(infoHtml).join('')}</div>
+        <div class="row"><button class="ghost" data-tadd>Add a question</button><button class="btn small" data-tsave>Save all</button></div></div>`;
+  }
+  const infoHtml = (it) => `<div class="infoitem"><label class="field">Question<input type="text" data-t value="${esc(it.title)}" maxlength="100"></label>
+    <label class="field" style="margin-top:8px">Answer<textarea rows="5" data-b>${esc(it.body)}</textarea></label>
+    <div class="acts"><button class="ghost" data-iup type="button">&uarr;</button><button class="ghost" data-idown type="button">&darr;</button><button class="ghost danger" data-idel type="button">Delete</button></div></div>`;
+  $('textBlocks').addEventListener('click', async (e) => {
+    const blk = e.target.closest('.textblock'); if (!blk) return;
+    const items = () => blk.querySelector('#infoItems');
+    if (e.target.closest('[data-tadd]')) { items().insertAdjacentHTML('beforeend', infoHtml({ title: '', body: '' })); return; }
+    const row = e.target.closest('.infoitem');
+    if (row && e.target.closest('[data-idel]')) { if (confirm('Delete this question?')) row.remove(); return; }
+    if (row && e.target.closest('[data-iup]') && row.previousElementSibling) { row.parentNode.insertBefore(row, row.previousElementSibling); return; }
+    if (row && e.target.closest('[data-idown]') && row.nextElementSibling) { row.parentNode.insertBefore(row.nextElementSibling, row); return; }
+    if (!e.target.closest('[data-tsave]')) return;
+    const key = blk.dataset.block; let value;
+    if (key === 'marquee') value = blk.querySelector('[data-v]').value.split('\n').map((x) => x.trim()).filter(Boolean);
+    if (key === 'contacts') {
+      const g = (n) => blk.querySelector(`[data-k="${n}"]`).value.trim();
+      value = { whatsapp: g('whatsapp'), email: g('email'), address: g('address'), phones: g('phones').split('\n').map((x) => x.trim()).filter(Boolean) };
+    }
+    if (key === 'info') value = [...blk.querySelectorAll('.infoitem')].map((r) => ({ title: r.querySelector('[data-t]').value.trim(), body: r.querySelector('[data-b]').value.trim() })).filter((x) => x.title && x.body);
+    try { await api('admin_content_save', { key, value }); S.content[key] = value; toast('Saved. It shows on the website within a few seconds.'); }
+    catch (x) { toast(x.message, true); }
+  });
 
   // ---------- start ----------
   if (S.token) { showApp(true); loadAll(); }

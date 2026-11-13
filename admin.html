@@ -36,6 +36,8 @@
         <button role="tab" data-tab="orders" aria-selected="true">Orders</button>
         <button role="tab" data-tab="fittings" aria-selected="false">Fittings</button>
         <button role="tab" data-tab="stock" aria-selected="false">Stock</button>
+        <button role="tab" data-tab="dresses" aria-selected="false">Dresses</button>
+        <button role="tab" data-tab="text" aria-selected="false">Site text</button>
       </nav>
       <div class="bar__end">
         <button class="ghost" id="refresh" title="Reload">Refresh</button>
@@ -61,6 +63,17 @@
       <section id="tab-stock" hidden>
         <p class="note">Ready-made dresses by size. Changes save as you make them and show on the shop within seconds.</p>
         <div id="stockList"></div>
+      </section>
+
+      <section id="tab-dresses" hidden>
+        <div class="row between"><p class="note">The dresses customers see in the shop and the homepage line-up.</p><button class="btn small" id="addDress">Add a dress</button></div>
+        <div id="dressForm"></div>
+        <div id="dressList"></div>
+      </section>
+
+      <section id="tab-text" hidden>
+        <p class="note">Words on the website. Changes show within a few seconds. In longer texts, **double stars** make bold, [link text](https://address) makes a link, and a line starting with "- " becomes a bullet.</p>
+        <div id="textBlocks"></div>
       </section>
     </main>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
