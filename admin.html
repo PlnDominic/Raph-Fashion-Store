@@ -36,7 +36,7 @@
         <button data-tab="fittings"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span>Fittings</span><em id="nb-fittings" hidden></em></button>
         <button data-tab="dresses"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3l3 3 3-3 3 5-3 2v11H9V10L6 8l3-5z"/></svg><span>Dresses</span></button>
         <button data-tab="stock"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8l8-4 8 4-8 4-8-4z"/><path d="M4 8v8l8 4 8-4V8M12 12v8"/></svg><span>Stock</span><em id="nb-stock" hidden></em></button>
-        <button data-tab="text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M12 6v13M9 19h6"/></svg><span>Site text</span></button>
+        <button data-tab="text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M12 6v13M9 19h6"/></svg><span>Text</span></button>
       </nav>
       <div class="side__foot">
         <button class="link" id="refresh">Refresh</button>
@@ -75,7 +75,7 @@
         <!-- dresses -->
         <section id="tab-dresses" hidden>
           <div class="bar">
-            <p class="note">The dresses customers see in the shop and on the homepage.</p>
+            <p class="note">Your dresses.</p>
             <button class="btn" id="addDress">+ Add a dress</button>
           </div>
           <div class="dgrid" id="dressList"></div>
@@ -83,13 +83,13 @@
 
         <!-- stock -->
         <section id="tab-stock" hidden>
-          <p class="note">How many of each size you have. Changes save as you make them and show in the shop within seconds. A size at 0 shows as sold out.</p>
+          <p class="note">Tap + or − to change how many you have. It saves by itself. 0 shows as sold out.</p>
           <div class="sgrid" id="stockList"></div>
         </section>
 
         <!-- site text -->
         <section id="tab-text" hidden>
-          <p class="note">The words on the website. Changes show within a few seconds. In longer texts, <b>**two stars**</b> make bold, <b>[link text](https://address)</b> makes a link, and a line starting with <b>- </b> becomes a bullet.</p>
+          <p class="note">The words on the website. Use **two stars** for bold.</p>
           <div id="textBlocks"></div>
         </section>
       </main>

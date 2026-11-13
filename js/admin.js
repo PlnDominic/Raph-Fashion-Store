@@ -8,13 +8,14 @@
   const STEPS = [['new', 'New'], ['confirmed', 'Confirmed'], ['cutting', 'Cutting'], ['sewing', 'Sewing'], ['ready', 'Ready'], ['delivered', 'Delivered']];
   const LABEL = { new: 'New', confirmed: 'Confirmed', cutting: 'Cutting', sewing: 'Sewing', ready: 'Ready', delivered: 'Delivered', cancelled: 'Cancelled' };
   const GROUPS = {
-    all: ['All', null], new: ['New', ['new']], making: ['In progress', ['confirmed', 'cutting', 'sewing']],
-    ready: ['Ready', ['ready']], done: ['Delivered', ['delivered']], cancelled: ['Cancelled', ['cancelled']],
+    all: ['All', null], new: ['New', ['new']], making: ['Making', ['confirmed', 'cutting', 'sewing']],
+    ready: ['Ready', ['ready']], done: ['Done', ['delivered', 'cancelled']],
   };
   const PAY = [['unpaid', 'Unpaid'], ['paid', 'Paid'], ['refunded', 'Refunded']];
   const KIND = { 'ready-made': 'Ready-made', 'made-to-measure': 'Made to measure', custom: 'Custom design' };
   const MEAS = [['bust', 'Bust'], ['underbust', 'Underbust'], ['waist', 'Waist'], ['hips', 'Hips'], ['shoulder', 'Shoulder'], ['bustPoint', 'Bust point'],
     ['shoulderWaist', 'Shoulder to waist'], ['sleeveLength', 'Sleeve length'], ['upperArm', 'Round arm'], ['dressLength', 'Full length'], ['height', 'Height']];
+  const WIN = { confirmed: 'Great, tell her!', cutting: 'Scissors out!', sewing: 'Stitch it up!', ready: 'Looking fabulous!', delivered: 'Delivered. Cheers!' };
   const TITLES = { orders: 'Orders', fittings: 'Fittings', dresses: 'Dresses', stock: 'Stock', text: 'Site text' };
   const names = {};
 
@@ -113,19 +114,10 @@
   };
 
   function renderOrders() {
-    // stat cards (they are also shortcuts)
-    const nNew = S.orders.filter((o) => o.status === 'new').length;
-    const making = S.orders.filter((o) => ['confirmed', 'cutting', 'sewing', 'ready'].includes(o.status)).length;
-    const unpaid = S.orders.filter((o) => o.status !== 'cancelled' && o.payment_status === 'unpaid');
-    const owed = unpaid.reduce((t, o) => t + Number(o.total_ghs || 0), 0);
-    $('stats').innerHTML = [
-      ['new', nNew, 'New orders'], ['making', making, 'Being made'],
-      ['unpaid', unpaid.length, owed ? `Unpaid · ${ghs(owed)}` : 'Unpaid'],
-      ['fit', S.fittings.filter((f) => f.status === 'booked' && Date.parse(f.slot_start) >= Date.now() && Date.parse(f.slot_start) <= Date.now() + 7 * 86400_000).length, 'Fittings this week'],
-    ].map(([k, n, l]) => `<button class="stat${S.filter === k ? ' is-on' : ''}" data-stat="${k}"><b>${n}</b><span>${esc(l)}</span></button>`).join('');
+    $('stats').innerHTML = '';
     $('chips').innerHTML = Object.entries(GROUPS).map(([k, [l]]) => {
       const n = S.orders.filter((o) => inGroup(o, k)).length;
-      return `<button class="chip" data-f="${k}" aria-pressed="${S.filter === k}">${l}<b>${n}</b></button>`;
+      return `<button class="chip" data-f="${k}" aria-pressed="${S.filter === k}">${l}${k === 'all' ? '' : '<b>' + n + '</b>'}</button>`;
     }).join('');
 
     const rows = S.orders.filter(matches);
@@ -134,9 +126,8 @@
       <button class="orow orow--${o.status}${S.open === o.id && (wide() || S.show) ? ' is-open' : ''}" data-open="${o.id}">
         <span class="orow__bar"></span>
         <span class="orow__main"><span class="orow__who">${esc(o.customer_name)}</span>
-          <span class="orow__sub">${esc(o.reference)} · ${esc(items(o) || KIND[o.kind] || o.kind)}</span></span>
-        <span class="orow__end"><span class="orow__total">${esc(ghs(o.total_ghs))}</span>
-          <span class="pill pill--${o.status}">${LABEL[o.status]}</span><span class="orow__time">${esc(ago(o.created_at))}</span></span>
+          <span class="orow__sub">${esc(items(o) || KIND[o.kind] || o.kind)} · ${esc(ago(o.created_at))}</span></span>
+        <span class="orow__end"><span class="pill pill--${o.status}">${LABEL[o.status]}</span><span class="orow__total">${esc(ghs(o.total_ghs))}</span></span>
       </button>`).join('') : `<div class="empty">${S.orders.length ? 'No orders match.' : 'No orders yet. New ones will appear here.'}</div>`;
 
     const cur = S.orders.find((o) => o.id === S.open);
@@ -146,62 +137,57 @@
 
   function detailHtml(o) {
     const idx = STEPS.findIndex(([k]) => k === o.status);
+    const next = STEPS[idx + 1];
     const m = o.measurements_cm;
     const meas = m ? MEAS.filter(([k]) => m[k] != null).map(([k, l]) => `<div><dt>${l}</dt><dd>${quarter(m[k])}</dd></div>`).join('') : '';
     const fits = S.fittings.filter((f) => f.order_reference === o.reference && f.status !== 'blocked');
     const msgs = [...(o.order_messages || [])].sort((a, b) => (a.sent_at < b.sent_at ? 1 : -1));
-    const mail = o.notified_at ? `<span class="mail-ok">Team emailed ${esc(when(o.notified_at))}</span>` : o.notify_error ? `<span class="mail-bad">Team email failed: ${esc(o.notify_error)}</span>` : 'No team email sent';
+    const mail = o.notified_at ? `<span class="mail-ok">Team emailed ${esc(when(o.notified_at))}</span>` : o.notify_error ? `<span class="mail-bad">Team email failed: ${esc(o.notify_error)}</span>` : '';
+    const cancelled = o.status === 'cancelled';
     return `<div class="od" data-id="${o.id}">
-      <button class="back" data-back>&#8249; All orders</button>
+      <button class="back" data-back>&#8249; Orders</button>
       <div class="od__head">
-        <div><h2 class="od__ref">${esc(o.reference)}</h2><div class="od__who">${esc(o.customer_name)} · placed ${esc(when(o.created_at))}</div></div>
+        <div><h2 class="od__ref">${esc(o.customer_name)}</h2><div class="od__who">${esc(o.reference)} · ${esc(when(o.created_at))}</div></div>
         <div class="od__acts"><a class="btn btn--wa btn--sm" href="${esc(waLink(o.customer_phone))}" target="_blank" rel="noopener">WhatsApp</a>
           <a class="btn btn--ghost btn--sm" href="tel:${esc(String(o.customer_phone).replace(/[^\d+]/g, ''))}">Call</a></div>
       </div>
 
-      <div class="card"><h3>Progress</h3>
-        ${o.status === 'cancelled' ? `<div class="cancelled-bar"><span>This order was cancelled.</span><button class="btn btn--ghost btn--sm" data-step="new">Re-open it</button></div>` :
-          `<div class="steps">${STEPS.map(([k, l], i) => `<button class="step${i < idx ? ' is-done' : i === idx ? ' is-now' : ''}" data-step="${k}"><i>${i < idx ? '&#10003;' : i + 1}</i>${l}</button>`).join('')}</div>`}
-        <label class="switchrow"><span class="switch"><input type="checkbox" data-notify ${wantsNotify() ? 'checked' : ''}><span></span></span>
-          <span><b>Tell the customer when I change the stage</b><small>Sends the email and SMS for this stage (if they gave an email or phone). Switch off to change it quietly.</small></span></label>
-        ${o.status === 'cancelled' ? '' : '<div class="row u-mt14"><button class="btn btn--danger btn--sm" data-cancel>Cancel this order</button></div>'}
+      <div class="card">
+        <div class="stage"><span class="pill pill--${o.status}">${LABEL[o.status]}</span>
+          ${cancelled ? '<button class="btn btn--ghost btn--sm" data-step="new">Re-open</button>'
+            : next ? `<button class="btn btn--go" data-step="${next[0]}"><span class="go__txt"><span class="go__a">Mark ${next[1].toLowerCase()}</span><span class="go__b">${WIN[next[0]] || 'Nice one!'}</span></span><svg class="go__plane" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4 18-7z"/></svg></button>` : '<span class="u-muted">All done</span>'}
+          ${cancelled ? '' : `<select class="inp sel" data-stepsel aria-label="Change stage">${STEPS.map(([k, l]) => `<option value="${k}"${k === o.status ? ' selected' : ''}>${l}</option>`).join('')}</select>`}
+        </div>
+        <label class="checkrow tiny"><input type="checkbox" data-notify ${wantsNotify() ? 'checked' : ''}> Message the customer when I change the stage</label>
       </div>
 
-      <div class="card"><h3>Payment</h3>
+      <div class="card">
         <div class="seg">${PAY.map(([k, l]) => `<button class="${k}" data-pay="${k}" aria-pressed="${o.payment_status === k}">${l}</button>`).join('')}</div>
+        <ul class="items">${(o.order_items || []).map((i) => `<li><span>${esc(i.product_name)}${i.size ? ' · ' + esc(i.size) : ''}${i.qty > 1 ? ' × ' + i.qty : ''}</span><span>${i.unit_price_ghs != null ? esc(ghs(i.unit_price_ghs)) : ''}</span></li>`).join('')}</ul>
+        <div class="totalrow"><label class="field u-w170">Total (GHS)<input type="number" min="0" step="0.01" data-total value="${o.total_ghs ?? ''}" placeholder="not set"></label>
+          <button class="btn btn--ghost btn--sm" data-save-total>Save</button></div>
       </div>
 
-      <div class="card"><h3>Customer</h3>
+      <div class="card">
         <dl class="kv">
-          <div><dt>Name</dt><dd>${esc(o.customer_name)}</dd></div>
           <div><dt>Phone</dt><dd>${esc(o.customer_phone)}</dd></div>
           ${o.customer_email ? `<div><dt>Email</dt><dd>${esc(o.customer_email)}</dd></div>` : ''}
           <div><dt>Address</dt><dd>${esc(o.delivery_address)}</dd></div>
-          <div><dt>Needed by</dt><dd>${o.need_by ? esc(o.need_by) : 'No date given'}</dd></div>
-          <div><dt>Order type</dt><dd>${esc(KIND[o.kind] || o.kind)}</dd></div>
+          <div><dt>Needed by</dt><dd>${o.need_by ? esc(o.need_by) : '–'}</dd></div>
+          <div><dt>Type</dt><dd>${esc(KIND[o.kind] || o.kind)}</dd></div>
+          ${fits.length ? `<div><dt>Fitting</dt><dd>${fits.map((f) => esc(dayLong(f.slot_start.slice(0, 10))) + ' ' + hhmm(f.slot_start)).join('<br>')}</dd></div>` : ''}
         </dl>
+        ${o.notes ? `<p class="u-pre u-mt14">${esc(o.notes)}</p>` : ''}
       </div>
 
-      <div class="card"><h3>What they ordered</h3>
-        <ul class="items">${(o.order_items || []).map((i) => `<li><span><b>${esc(i.product_name)}</b>${i.size ? ' · ' + esc(i.size) : ''}${i.qty > 1 ? ' × ' + i.qty : ''}</span><span>${i.unit_price_ghs != null ? esc(ghs(i.unit_price_ghs)) : ''}</span></li>`).join('')}</ul>
-        <div class="totalrow"><label class="field u-w170">Total (GHS)<input type="number" min="0" step="0.01" data-total value="${o.total_ghs ?? ''}" placeholder="not set yet"></label>
-          <button class="btn btn--ghost btn--sm" data-save-total>Save total</button></div>
-      </div>
-
-      ${o.notes ? `<div class="card"><h3>Customer's note</h3><p class="u-pre">${esc(o.notes)}</p></div>` : ''}
-      ${meas ? `<div class="card"><h3>Measurements (inches)</h3><dl class="meas">${meas}</dl></div>` : ''}
-      ${o.photos && o.photos.length ? `<div class="card"><h3>Style photos</h3><div class="photos">${o.photos.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="Style photo" loading="lazy"></a>`).join('')}</div></div>` : ''}
-      ${fits.length ? `<div class="card"><h3>Fitting</h3>${fits.map((f) => `<p class="u-mb4">${esc(dayLong(f.slot_start.slice(0, 10)))}, ${hhmm(f.slot_start)} <span class="pill pill--${f.status}">${f.status}</span></p>`).join('')}</div>` : ''}
-
-      <div class="card"><h3>Notes for your team</h3>
-        <label class="field u-hide" for="notes-${o.id}">Notes</label>
-        <textarea class="inp" id="notes-${o.id}" data-notes rows="3" placeholder="Only your team sees this. It saves when you tap away.">${esc(o.internal_notes || '')}</textarea>
+      ${meas ? `<details class="card fold"><summary>Measurements (inches)</summary><dl class="meas">${meas}</dl></details>` : ''}
+      ${o.photos && o.photos.length ? `<details class="card fold"><summary>Photos (${o.photos.length})</summary><div class="photos">${o.photos.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="Style photo" loading="lazy"></a>`).join('')}</div></details>` : ''}
+      <details class="card fold"><summary>Notes and messages${msgs.length ? ' (' + msgs.length + ')' : ''}</summary>
+        <textarea class="inp" id="notes-${o.id}" data-notes rows="3" aria-label="Team notes" placeholder="Notes for your team. Saves when you tap away.">${esc(o.internal_notes || '')}</textarea>
         <div class="saved-note" data-notes-ok></div>
-      </div>
-
-      <div class="card"><h3>Messages</h3>
-        <div class="log"><p>${mail}</p>${msgs.length ? msgs.map((x) => `<p>${esc(when(x.sent_at))} · ${x.channel === 'sms' ? 'SMS' : 'Email'} · ${esc(x.kind)} ${x.error ? `<span class="mail-bad">failed: ${esc(x.error)}</span>` : '<span class="mail-ok">sent</span>'}</p>`).join('') : '<p class="u-muted">No messages sent to the customer yet.</p>'}</div>
-      </div>
+        <div class="log">${mail ? `<p>${mail}</p>` : ''}${msgs.map((x) => `<p>${esc(when(x.sent_at))} · ${x.channel === 'sms' ? 'SMS' : 'Email'} · ${esc(x.kind)} ${x.error ? `<span class="mail-bad">failed</span>` : '<span class="mail-ok">sent</span>'}</p>`).join('')}</div>
+      </details>
+      ${cancelled ? '' : '<button class="link danger-link" data-cancel>Cancel this order</button>'}
     </div>`;
   }
 
@@ -240,6 +226,8 @@
     if (e.target.closest('[data-save-total]')) { const v = root.querySelector('[data-total]').value; updateOrder(id, { total_ghs: v === '' ? null : Number(v) }, 'Total saved'); }
   });
   $('orderDetail').addEventListener('change', async (e) => {
+    const sel = e.target.closest('[data-stepsel]');
+    if (sel) { const id = sel.closest('.od').dataset.id; const o = S.orders.find((x) => x.id === id); if (o.status !== sel.value) updateOrder(id, { status: sel.value }, 'Moved to ' + LABEL[sel.value]); return; }
     const nt = e.target.closest('[data-notify]');
     if (nt) { try { localStorage.setItem('mave_notify', nt.checked ? '1' : '0'); } catch (x) { /* ignore */ } toast(nt.checked ? 'The customer will be told' : 'Changes will be quiet'); return; }
     const notes = e.target.closest('[data-notes]');
@@ -462,12 +450,12 @@
     $('stockList').innerHTML = order.map((id) => {
       const rows = by[id].sort((a, b) => rank(a.size) - rank(b.size) || a.size.localeCompare(b.size));
       const total = rows.reduce((t, r) => t + r.qty, 0), outN = rows.filter((r) => r.qty === 0).length;
-      const sum = !rows.length ? '<span class="sum bad">No sizes yet</span>' : total === 0 ? '<span class="sum bad">Sold out</span>' : outN ? `<span class="sum low">${total} in stock · ${outN} size${outN > 1 ? 's' : ''} out</span>` : `<span class="sum">${total} in stock</span>`;
+      const sum = !rows.length ? '<span class="sum bad">No sizes</span>' : total === 0 ? '<span class="sum bad">Sold out</span>' : `<span class="sum${outN ? ' low' : ''}">${total} left</span>`;
       return `<div class="scard" data-p="${esc(id)}"><header><h3>${esc(names[id] || id)}</h3>${sum}</header>
         <div class="tiles">${rows.map((r) => `<div class="tile${r.qty === 0 ? ' is-out' : r.qty === 1 ? ' is-low' : ''}" data-s="${esc(r.size)}">
           <b>${esc(r.size)}</b><button class="x" data-del aria-label="Remove ${esc(r.size)}" title="Stop offering this size">&times;</button><span class="ok" data-ok></span>
           <div class="q"><button data-d="-1" aria-label="One fewer">&minus;</button><input type="number" min="0" max="999" inputmode="numeric" value="${r.qty}" data-q aria-label="${esc(r.size)} quantity"><button data-d="1" aria-label="One more">+</button></div></div>`).join('')}</div>
-        <div class="addsize"><input class="inp" data-newsize placeholder="New size, e.g. UK 24"><input class="inp qty" data-newqty type="number" min="0" max="999" placeholder="Qty"><button class="btn btn--ghost btn--sm" data-add>Add</button></div></div>`;
+        <div class="addsize"><input class="inp" data-newsize placeholder="New size"><input class="inp qty" data-newqty type="number" min="0" max="999" placeholder="Qty"><button class="btn btn--ghost btn--sm" data-add>Add</button></div></div>`;
     }).join('');
   }
   async function saveStock(id, size, qty, tile) {
