@@ -60,23 +60,26 @@
 
   <main id="top">
 
-    <!-- The line-up: the models stand edge-on in a row; hover (or tap) turns one to face you, click opens a closer look. -->
+    <!-- The hero: one model shown in full, the next ones peeking in on either side. -->
     <section class="rail" id="hero" aria-label="Mave Collection, the line-up">
       <div class="rail__stage">
         <p class="rail__eyebrow"><span>The line-up</span><span>Mave Collection / Accra</span></p>
 
-        <div class="rail__scroll" id="railScroll">
-          <div class="rail__track">
-            <ul class="rail__items" id="railItems"></ul>
-            <div class="rail__bar" aria-hidden="true"></div>
-          </div>
+        <div class="carousel" id="carousel" role="group" aria-roledescription="carousel" aria-label="Dresses">
+          <ul class="carousel__track" id="railItems"></ul>
+          <button class="carousel__nav carousel__nav--prev" id="railPrev" type="button" aria-label="Previous dress">&#8249;</button>
+          <button class="carousel__nav carousel__nav--next" id="railNext" type="button" aria-label="Next dress">&#8250;</button>
         </div>
 
         <div class="rail__caption" aria-live="polite">
-          <p class="rail__name" id="railName">From Accra, with love</p>
-          <p class="rail__hint" id="railHint">Hover a model to turn her. Click to explore.</p>
+          <p class="rail__count" id="railCount"></p>
+          <h1 class="rail__name" id="railName"></h1>
+          <p class="rail__meta" id="railMeta"></p>
+          <div class="rail__acts">
+            <button class="btn" type="button" id="railView">View the dress</button>
+            <button class="btn btn--ghost" type="button" id="railTailor">Get it tailored</button>
+          </div>
         </div>
-        <a class="rail__btn" href="#shop">Explore the shop <span aria-hidden="true">&#8599;</span></a>
 
         <div class="marquee" aria-hidden="true"><div class="marquee__row">
           <span>From Accra, with love</span><b>&#10022;</b><span>Designed &amp; stitched in Danfa</span><b>&#10022;</b><span>Mave Collection, Accra</span><b>&#10022;</b>
@@ -84,22 +87,6 @@
           <span>From Accra, with love</span><b>&#10022;</b><span>Designed &amp; stitched in Danfa</span><b>&#10022;</b><span>Mave Collection, Accra</span><b>&#10022;</b>
           <span>From Accra, with love</span><b>&#10022;</b><span>Designed &amp; stitched in Danfa</span><b>&#10022;</b><span>Mave Collection, Accra</span><b>&#10022;</b>
         </div></div>
-      </div>
-
-      <div class="railfocus" id="railFocus" role="dialog" aria-modal="true" aria-label="A closer look" hidden>
-        <button class="railfocus__close" id="railClose" type="button">Close <span aria-hidden="true">&times;</span></button>
-        <button class="railfocus__nav railfocus__nav--prev" id="railPrev" type="button" aria-label="Previous dress">&#8249;</button>
-        <button class="railfocus__nav railfocus__nav--next" id="railNext" type="button" aria-label="Next dress">&#8250;</button>
-        <div class="railfocus__body">
-          <div class="railfocus__hang"><img id="railBig" alt=""><i class="railfocus__shadow" aria-hidden="true"></i></div>
-          <p class="railfocus__count" id="railCount"></p>
-          <h2 class="railfocus__name" id="railFocusName"></h2>
-          <p class="railfocus__meta" id="railMeta"></p>
-          <div class="railfocus__acts">
-            <button class="btn" type="button" id="railView">View the dress</button>
-            <button class="btn btn--ghost" type="button" id="railTailor">Get it tailored</button>
-          </div>
-        </div>
       </div>
     </section>
 

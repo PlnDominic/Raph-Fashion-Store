@@ -17,7 +17,7 @@ window.PRODUCTS = [
   {
     id: 'royal-plum-set',
     rail: 'assets/rail/royal-plum-set.webp',
-    railScale: 0.7,        // this photo stops at the hips, so it stands a little smaller in the line-up
+    railScale: 0.85,       // this photo stops at the hips, so it stands a little smaller in the line-up
     name: 'Royal Plum Set',
     readyMade: true,
     price: 300,
@@ -45,7 +45,7 @@ window.PRODUCTS = [
   {
     id: 'duchess-navy-dress',
     rail: 'assets/rail/duchess-navy-dress.webp',
-    railScale: 0.7,        // this photo stops at the hips, so it stands a little smaller in the line-up
+    railScale: 0.85,       // this photo stops at the hips, so it stands a little smaller in the line-up
     name: 'Duchess Navy Dress',
     readyMade: true,
     price: 290,

@@ -16,9 +16,9 @@ Then open http://localhost:8000.
 
 ## Hero: the line-up
 
-`index.html` (`#hero`) + `js/rail.js` + `css/rail.css`. The models stand edge-on in a row on a thin floor line. Hovering one (or tapping her on a phone) turns her to face you; clicking opens a closer look with arrows to move between dresses (and the arrow keys and Escape). A green band of text scrolls along the bottom. The menu sits top left, the logo in the middle, Shop and the cart on the right.
+`index.html` (`#hero`) + `js/rail.js` + `css/rail.css`. One model is shown in full in the middle; the next dresses peek in, smaller and fainter, on either side. Move along with the arrows, the keyboard arrow keys, a swipe, or a tap on a neighbour. Under the model sit her name, price and the "View the dress" and "Get it tailored" buttons. A green band of text scrolls along the bottom. The menu sits top left, the logo in the middle, Shop and the cart on the right.
 
-Every dress in `js/products.js` that has a `rail` image stands in the line-up. To add one: put its photo in `assets/source/products/<id>.jpg`, add its crop line to `scripts/make_rail_cutouts.py` and run `python3 scripts/make_rail_cutouts.py <id>` (needs rembg). It cuts the whole model out and writes a transparent `assets/rail/<id>.webp`. Then set `rail: 'assets/rail/<id>.webp'` on the dress.
+Every dress in `js/products.js` that has a `rail` image is in the line-up. To add one: put its photo in `assets/source/products/<id>.jpg`, add its crop line to `scripts/make_rail_cutouts.py` and run `python3 scripts/make_rail_cutouts.py <id>` (needs rembg). It cuts the whole model out and writes a transparent `assets/rail/<id>.webp`. Then set `rail: 'assets/rail/<id>.webp'` on the dress (`railScale` makes a photo that stops at the hips stand a little smaller).
 
 ## Shop and orders
 
