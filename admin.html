@@ -10,72 +10,92 @@
   <link rel="icon" href="assets/brand/icon-64.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/admin.css">
 </head>
 <body>
   <!-- sign in -->
   <main class="login" id="login">
     <form class="login__card" id="loginForm" novalidate>
-      <img src="assets/brand/mave-logo.png" alt="" width="52" height="52">
+      <img src="assets/brand/mave-logo.png" alt="" width="56" height="56">
       <h1>Mave Admin</h1>
-      <p>Orders, fittings and stock.</p>
-      <label>Password
-        <input type="password" id="pw" autocomplete="current-password" autofocus>
-      </label>
+      <p>Orders, fittings, dresses and stock.</p>
+      <label for="pw">Password</label>
+      <input type="password" id="pw" autocomplete="current-password" autofocus>
       <p class="err" id="loginErr" role="alert"></p>
-      <button class="btn" id="loginBtn">Sign in</button>
+      <button class="btn btn--block" id="loginBtn">Sign in</button>
     </form>
   </main>
 
   <!-- the dashboard -->
   <div class="app" id="app" hidden>
-    <header class="bar">
-      <div class="bar__brand"><img src="assets/brand/mave-logo.png" alt="" width="30" height="30"><span>Mave <i>Admin</i></span></div>
-      <nav class="tabs" id="tabs" role="tablist">
-        <button role="tab" data-tab="orders" aria-selected="true">Orders</button>
-        <button role="tab" data-tab="fittings" aria-selected="false">Fittings</button>
-        <button role="tab" data-tab="stock" aria-selected="false">Stock</button>
-        <button role="tab" data-tab="dresses" aria-selected="false">Dresses</button>
-        <button role="tab" data-tab="text" aria-selected="false">Site text</button>
+    <aside class="side">
+      <div class="side__brand"><img src="assets/brand/mave-logo.png" alt="" width="36" height="36"><span>Mave <i>Admin</i></span></div>
+      <nav class="nav" id="nav" aria-label="Sections">
+        <button data-tab="orders" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 12H7L6 7z"/><path d="M9 7V6a3 3 0 0 1 6 0v1"/></svg><span>Orders</span><em id="nb-orders" hidden></em></button>
+        <button data-tab="fittings"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span>Fittings</span><em id="nb-fittings" hidden></em></button>
+        <button data-tab="dresses"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3l3 3 3-3 3 5-3 2v11H9V10L6 8l3-5z"/></svg><span>Dresses</span></button>
+        <button data-tab="stock"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8l8-4 8 4-8 4-8-4z"/><path d="M4 8v8l8 4 8-4V8M12 12v8"/></svg><span>Stock</span><em id="nb-stock" hidden></em></button>
+        <button data-tab="text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M12 6v13M9 19h6"/></svg><span>Site text</span></button>
       </nav>
-      <div class="bar__end">
-        <button class="ghost" id="refresh" title="Reload">Refresh</button>
-        <button class="ghost" id="signout">Sign out</button>
+      <div class="side__foot">
+        <button class="link" id="refresh">Refresh</button>
+        <button class="link" id="signout">Sign out</button>
+        <a class="link" href="index.html" target="_blank" rel="noopener">View the website &#8599;</a>
       </div>
-    </header>
+    </aside>
 
-    <main class="wrap">
-      <section id="tab-orders">
-        <div class="stats" id="stats"></div>
-        <div class="filters">
-          <div class="chips" id="chips"></div>
-          <input class="search" id="search" type="search" placeholder="Search name, phone or reference" autocomplete="off">
+    <div class="main">
+      <header class="top">
+        <h1 id="pageTitle">Orders</h1>
+        <div class="top__end">
+          <button class="icon-btn" id="refresh2" aria-label="Refresh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v5h-5"/></svg></button>
+          <button class="icon-btn" id="signout2" aria-label="Sign out"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h4M15 8l4 4-4 4M19 12H9"/></svg></button>
         </div>
-        <div class="list" id="orderList"></div>
-      </section>
+      </header>
 
-      <section id="tab-fittings" hidden>
-        <div class="panel" id="closures"></div>
-        <div id="fittingList"></div>
-      </section>
+      <main class="wrap">
+        <!-- orders -->
+        <section id="tab-orders" class="orders">
+          <div class="orders__list">
+            <div class="stats" id="stats"></div>
+            <div class="searchrow"><input class="search" id="search" type="search" placeholder="Search name, phone or reference" autocomplete="off"></div>
+            <div class="chips" id="chips"></div>
+            <div class="olist" id="orderList"></div>
+          </div>
+          <div class="orders__detail" id="orderDetail"></div>
+        </section>
 
-      <section id="tab-stock" hidden>
-        <p class="note">Ready-made dresses by size. Changes save as you make them and show on the shop within seconds.</p>
-        <div id="stockList"></div>
-      </section>
+        <!-- fittings -->
+        <section id="tab-fittings" hidden>
+          <details class="card closer" id="closures"></details>
+          <div id="fittingList"></div>
+        </section>
 
-      <section id="tab-dresses" hidden>
-        <div class="row between"><p class="note">The dresses customers see in the shop and the homepage line-up.</p><button class="btn small" id="addDress">Add a dress</button></div>
-        <div id="dressForm"></div>
-        <div id="dressList"></div>
-      </section>
+        <!-- dresses -->
+        <section id="tab-dresses" hidden>
+          <div class="bar">
+            <p class="note">The dresses customers see in the shop and on the homepage.</p>
+            <button class="btn" id="addDress">+ Add a dress</button>
+          </div>
+          <div class="dgrid" id="dressList"></div>
+        </section>
 
-      <section id="tab-text" hidden>
-        <p class="note">Words on the website. Changes show within a few seconds. In longer texts, **double stars** make bold, [link text](https://address) makes a link, and a line starting with "- " becomes a bullet.</p>
-        <div id="textBlocks"></div>
-      </section>
-    </main>
+        <!-- stock -->
+        <section id="tab-stock" hidden>
+          <p class="note">How many of each size you have. Changes save as you make them and show in the shop within seconds. A size at 0 shows as sold out.</p>
+          <div class="sgrid" id="stockList"></div>
+        </section>
+
+        <!-- site text -->
+        <section id="tab-text" hidden>
+          <p class="note">The words on the website. Changes show within a few seconds. In longer texts, <b>**two stars**</b> make bold, <b>[link text](https://address)</b> makes a link, and a line starting with <b>- </b> becomes a bullet.</p>
+          <div id="textBlocks"></div>
+        </section>
+      </main>
+    </div>
+
+    <dialog class="modal" id="dressDialog" aria-labelledby="dressTitle"><form id="dressForm" novalidate></form></dialog>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </div>
 
